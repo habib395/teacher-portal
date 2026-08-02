@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -8,31 +9,76 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { dummyAttendance } from "@/features/attendance/attendanceData";
+import { useGetStudentsQuery } from "@/features/student/studentApi";
+import {
+  useGetAttendanceByDateQuery,
+  useSaveAttendanceMutation,
+} from "@/features/attendance/attendanceApi";
 import type { AttendanceRecord, AttendanceStatus } from "@/types";
 
+function getTodayDate() {
+  return new Date().toISOString().split("T")[0];
+}
+
 export default function Attendance() {
-  const [records, setRecords] = useState<AttendanceRecord[]>(dummyAttendance);
+  const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [manualOverrides, setManualOverrides] = useState<Record<string, AttendanceStatus>>({});
+
+  const { data: students, isLoading: studentsLoading } = useGetStudentsQuery();
+  const { data: existingAttendance } = useGetAttendanceByDateQuery(selectedDate);
+  const [saveAttendance, { isLoading: isSaving }] = useSaveAttendanceMutation();
+
+  const records: AttendanceRecord[] = useMemo(() => {
+    if (!students) return [];
+
+    return students.map((student) => {
+      const existing = existingAttendance?.find(
+        (record) => record.studentId === student._id
+      );
+      return {
+        studentId: student._id,
+        studentName: student.name,
+        rollNumber: student.rollNumber,
+        status: manualOverrides[student._id] || existing?.status || "present",
+      };
+    });
+  }, [students, existingAttendance, manualOverrides]);
 
   const updateStatus = (studentId: string, status: AttendanceStatus) => {
-    setRecords((prev) =>
-      prev.map((r) =>
-        r.studentId === studentId ? { ...r, status } : r
-      )
-    );
+    setManualOverrides((prev) => ({ ...prev, [studentId]: status }));
   };
 
-  const handleSaveAttendance = () => {
-    // এখানে পরে API call বসবে (backend বানানোর সময়)
-    console.log("Saving attendance:", records);
-    alert("Attendance saved! (check console for now)");
+  const handleSaveAttendance = async () => {
+    try {
+      await saveAttendance({ date: selectedDate, records }).unwrap();
+      alert("Attendance saved successfully!");
+      setManualOverrides({});
+    } catch (err) {
+      console.error("Failed to save attendance:", err);
+      alert("Failed to save attendance.");
+    }
   };
+
+  if (studentsLoading) return <p>Loading students...</p>;
 
   return (
     <div>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Attendance</h1>
-        <Button onClick={handleSaveAttendance}>Save Attendance</Button>
+        <div className="flex items-center gap-3">
+          <Input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => {
+              setSelectedDate(e.target.value);
+              setManualOverrides({});
+            }}
+            className="w-40"
+          />
+          <Button onClick={handleSaveAttendance} disabled={isSaving}>
+            {isSaving ? "Saving..." : "Save Attendance"}
+          </Button>
+        </div>
       </div>
 
       <div className="mt-6 rounded-md border">

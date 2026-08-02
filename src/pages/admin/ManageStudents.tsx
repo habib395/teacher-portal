@@ -17,15 +17,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { dummyStudents } from "@/features/student/studentData";
 import type { Student } from "@/types";
+import {
+  useGetStudentsQuery,
+  useCreateStudentMutation,
+  useUpdateStudentMutation,
+  useDeleteStudentMutation,
+} from "@/features/student/studentApi";
 
 export default function ManageStudents() {
-  const [students, setStudents] = useState<Student[]>(dummyStudents);
+  const { data: students, isLoading, isError } = useGetStudentsQuery();
+  const [createStudent] = useCreateStudentMutation();
+  const [updateStudent] = useUpdateStudentMutation();
+  const [deleteStudent] = useDeleteStudentMutation();
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
 
-  // form fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [className, setClassName] = useState("");
@@ -49,31 +57,32 @@ export default function ManageStudents() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setStudents((prev) => prev.filter((s) => s.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteStudent(id).unwrap();
+    } catch (err) {
+      console.error("Failed to delete student:", err);
+    }
   };
 
-  const handleSave = () => {
-    if (editingStudent) {
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.id === editingStudent.id
-            ? { ...s, name, email, className, rollNumber }
-            : s
-        )
-      );
-    } else {
-      const newStudent: Student = {
-        id: Date.now().toString(),
-        name,
-        email,
-        className,
-        rollNumber,
-      };
-      setStudents((prev) => [...prev, newStudent]);
+  const handleSave = async () => {
+    try {
+      if (editingStudent) {
+        await updateStudent({
+          id: editingStudent._id,
+          data: { name, email, className, rollNumber },
+        }).unwrap();
+      } else {
+        await createStudent({ name, email, className, rollNumber }).unwrap();
+      }
+      setIsDialogOpen(false);
+    } catch (err) {
+      console.error("Failed to save student:", err);
     }
-    setIsDialogOpen(false);
   };
+
+  if (isLoading) return <p>Loading students...</p>;
+  if (isError) return <p className="text-red-600">Failed to load students.</p>;
 
   return (
     <div>
@@ -94,8 +103,8 @@ export default function ManageStudents() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {students.map((student) => (
-              <TableRow key={student.id}>
+            {students?.map((student) => (
+              <TableRow key={student._id}>
                 <TableCell>{student.name}</TableCell>
                 <TableCell>{student.email}</TableCell>
                 <TableCell>{student.className}</TableCell>
@@ -111,7 +120,7 @@ export default function ManageStudents() {
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleDelete(student.id)}
+                    onClick={() => handleDelete(student._id)}
                   >
                     Delete
                   </Button>
@@ -122,7 +131,6 @@ export default function ManageStudents() {
         </Table>
       </div>
 
-      {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -134,11 +142,7 @@ export default function ManageStudents() {
           <div className="space-y-4">
             <div>
               <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-              />
+              <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
             </div>
             <div>
               <Label htmlFor="email">Email</Label>

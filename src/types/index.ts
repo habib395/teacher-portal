@@ -1,6 +1,7 @@
 export type UserRole = "admin" | "teacher" | "student";
 export type AttendanceStatus = "present" | "absent";
 
+
 export interface User {
   id: string;
   name: string;
@@ -16,7 +17,7 @@ export interface ClassInfo {
 }
 
 export interface Teacher {
-  id: string;
+  _id: string;
   name: string;
   email: string;
   subject: string;
@@ -24,7 +25,8 @@ export interface Teacher {
 }
 
 export interface Student {
-  id: string;
+  _id: string;
+
   name: string;
   email: string;
   classId?: string;
@@ -40,10 +42,11 @@ export interface AttendanceRecord {
   status: AttendanceStatus;
 }
 
-export interface MarksRecord {
+  export interface MarksRecord {
     studentId: string;
     studentName: string;
     rollNumber: string;
+    subject: string;
     marks: number;
   }
 

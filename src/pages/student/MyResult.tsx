@@ -1,3 +1,4 @@
+import { useSelector } from "react-redux";
 import {
   Table,
   TableBody,
@@ -6,11 +7,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { dummyResult } from "@/features/result/resultData";
+import type { RootState } from "@/app/store";
+import { useGetMarksByStudentQuery } from "@/features/marks/markApi";
 
 export default function MyResult() {
-  const totalMarks = dummyResult.reduce((sum, r) => sum + r.marks, 0);
-  const averageMarks = (totalMarks / dummyResult.length).toFixed(1);
+  const userId = useSelector((state: RootState) => state.auth.userId);
+
+  const { data: results, isLoading, isError } = useGetMarksByStudentQuery(userId ?? "", {
+    skip: !userId,
+  });
+
+  if (isLoading) return <p>Loading result...</p>;
+  if (isError) return <p className="text-red-600">Failed to load result.</p>;
+
+  const totalMarks = results?.reduce((sum, r) => sum + r.marks, 0) ?? 0;
+  const averageMarks = results?.length ? (totalMarks / results.length).toFixed(1) : "0";
 
   return (
     <div>
@@ -22,15 +33,13 @@ export default function MyResult() {
             <TableRow>
               <TableHead>Subject</TableHead>
               <TableHead>Marks</TableHead>
-              <TableHead>Grade</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {dummyResult.map((result) => (
+            {results?.map((result) => (
               <TableRow key={result.subject}>
                 <TableCell>{result.subject}</TableCell>
                 <TableCell>{result.marks}</TableCell>
-                <TableCell>{result.grade}</TableCell>
               </TableRow>
             ))}
           </TableBody>
