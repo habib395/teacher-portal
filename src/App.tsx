@@ -1,4 +1,5 @@
 
+import { Route, Routes,  } from 'react-router-dom'
 import './App.css'
 import AboutMe from './components/public/AboutMe'
 import AllClasses from './components/public/AllClasses'
@@ -8,8 +9,23 @@ import HeroSection from './components/public/HeroSection'
 import MyVision from './components/public/MyVision'
 import Navbar from './components/public/Navbar'
 import TotalStudent from './components/public/TotalStudent'
+import Login from './pages/public/Login'
+import AdminLayout from './layouts/AdminLayout'
+import ProtectedRoute from './routes/ProtectedRoute'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import TeacherLayout from './layouts/TeacherLayout'
+import StudentLayout from './layouts/StudentLayout'
+import TeacherDashboard from './pages/teacher/TeacherDashboard'
+import StudentDashboard from './pages/student/StudentDashboard'
+import ManageTeachers from './pages/admin/ManageTeachers'
+import ManageStudents from './pages/admin/ManageStudents'
+import Attendance from './pages/teacher/Attendance'
+import MarksEntry from './pages/teacher/MarkEntry'
+import MyResult from './pages/student/MyResult'
+import Assignments from './pages/student/Assignmests'
 
-function App() {
+
+function HomePage() {
 
   return (
     <>
@@ -22,6 +38,45 @@ function App() {
       <ContactMe />
       <Footer />
     </>
+  )
+}
+
+function App() {
+  return (
+    <Routes>
+      {/* public routes */}
+      <Route path="/" element={<HomePage />} />
+      <Route path="/login" element={<Login />} />
+
+      {/* Admin routes protected */}
+      <Route element={<ProtectedRoute allowedRole="admin" />}>
+        <Route path="/admin" element={<AdminLayout />} >
+        <Route index element={<AdminDashboard />} />
+        <Route path="teachers" element={<ManageTeachers />} />
+        <Route path="students" element={<ManageStudents />} />
+        </Route>
+      </Route>
+
+      {/* Teacher routes protected */}
+      <Route element={<ProtectedRoute allowedRole="teacher" />}>
+        <Route path="/teacher" element={<TeacherLayout />}>
+          <Route index element={<TeacherDashboard />} />
+          <Route path="attendance" element={<Attendance />} />
+          <Route path="marks" element={<MarksEntry />} />
+        </Route>
+      </Route>
+
+      {/* Student routes protected */}
+      <Route element={<ProtectedRoute allowedRole="student" />}>
+        <Route path="/student" element={<StudentLayout />} >
+        <Route index element={<StudentDashboard />} />
+        <Route path="result" element={<MyResult />} />
+        <Route path="assignments" element={<Assignments />} />
+        </Route>
+      </Route>
+
+
+    </Routes>
   )
 }
 
