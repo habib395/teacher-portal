@@ -1,23 +1,63 @@
-
 export type UserRole = "admin" | "teacher" | "student";
+export type AttendanceStatus = "present" | "absent";
 
 export interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: UserRole;
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
 }
 
 export interface ClassInfo {
-    id: string;
-    name: string;
-    subject: string;
-    teacherId: string;
+  id: string;
+  name: string;
+  subject: string;
+  teacherId: string;
+}
+
+export interface Teacher {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  phone: string;
 }
 
 export interface Student {
-    id: string;
-    name: string;
-    classId: string;
-    rollNumber: string;
+  id: string;
+  name: string;
+  email: string;
+  classId?: string;
+  className: string;
+  rollNumber: string;
 }
+
+
+export interface AttendanceRecord {
+  studentId: string;
+  studentName: string;
+  rollNumber: string;
+  status: AttendanceStatus;
+}
+
+export interface MarksRecord {
+    studentId: string;
+    studentName: string;
+    rollNumber: string;
+    marks: number;
+  }
+
+  export interface SubjectResult {
+    subject: string;
+    marks: number;
+    grade: string;
+  }
+  
+  export interface Assignment {
+    id: string;
+    title: string;
+    subject: string;
+    deadline: string;
+    status: "pending" | "submitted";
+  }
+  
