@@ -7,6 +7,7 @@ interface AuthState {
   role: UserRole;
   name: string | null;
   userId: string | null;
+  studentProfile: string | null;
   token: string | null;
 }
 
@@ -15,6 +16,7 @@ const initialState: AuthState = {
   role: null,
   name: null,
   userId: null,
+  studentProfile: null,
   token: null,
 };
 
@@ -28,6 +30,7 @@ const authSlice = createSlice({
         role: UserRole;
         name: string;
         userId: string;
+        studentProfile: string | null;
         token: string;
       }>
     ) => {
@@ -35,6 +38,7 @@ const authSlice = createSlice({
       state.role = action.payload.role;
       state.name = action.payload.name;
       state.userId = action.payload.userId;
+      state.studentProfile = action.payload.studentProfile;
       state.token = action.payload.token;
     },
     logout: (state) => {
@@ -42,6 +46,7 @@ const authSlice = createSlice({
       state.role = null;
       state.name = null;
       state.userId = null;
+      state.studentProfile = null;
       state.token = null;
     },
   },

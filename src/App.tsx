@@ -22,7 +22,8 @@ import ManageStudents from './pages/admin/ManageStudents'
 import Attendance from './pages/teacher/Attendance'
 import MarksEntry from './pages/teacher/MarkEntry'
 import MyResult from './pages/student/MyResult'
-import Assignments from './pages/student/Assignmests'
+import Assignments from './pages/student/Assignments'
+import CreateAssignment from './pages/teacher/CreateAssignment'
 
 
 function HomePage() {
@@ -63,6 +64,7 @@ function App() {
           <Route index element={<TeacherDashboard />} />
           <Route path="attendance" element={<Attendance />} />
           <Route path="marks" element={<MarksEntry />} />
+          <Route path="assignments" element={<CreateAssignment />} />
         </Route>
       </Route>
 

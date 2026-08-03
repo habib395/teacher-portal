@@ -11,11 +11,12 @@ import type { RootState } from "@/app/store";
 import { useGetMarksByStudentQuery } from "@/features/marks/markApi";
 
 export default function MyResult() {
-  const userId = useSelector((state: RootState) => state.auth.userId);
+  const studentProfileId = useSelector((state: RootState) => state.auth.studentProfile);
 
-  const { data: results, isLoading, isError } = useGetMarksByStudentQuery(userId ?? "", {
-    skip: !userId,
-  });
+const { data: results, isLoading, isError } = useGetMarksByStudentQuery(
+  studentProfileId ?? "",
+  { skip: !studentProfileId }
+);
 
   if (isLoading) return <p>Loading result...</p>;
   if (isError) return <p className="text-red-600">Failed to load result.</p>;

@@ -13,6 +13,7 @@ interface LoginResponse {
     name: string;
     email: string;
     role: "admin" | "teacher" | "student";
+    studentProfile: string | null;
   };
 }
 

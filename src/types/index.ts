@@ -64,3 +64,10 @@ export interface AttendanceRecord {
     status: "pending" | "submitted";
   }
   
+  export interface Assignment {
+    _id: string;
+    title: string;
+    subject: string;
+    deadline: string;
+    submittedBy: string[];
+  }

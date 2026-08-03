@@ -20,16 +20,17 @@ export default function Login() {
     setError("");
     try {
       const result = await loginApi({ email, password }).unwrap();
-
+  
       dispatch(
         login({
           role: result.user.role,
           name: result.user.name,
           userId: result.user.id,
+          studentProfile: result.user.studentProfile || null,
           token: result.token,
         })
       );
-
+  
       navigate(`/${result.user.role}`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
