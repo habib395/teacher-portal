@@ -1,5 +1,4 @@
-
-import { Route, Routes,  } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 import './App.css'
 import AboutMe from './components/public/AboutMe'
 import AllClasses from './components/public/AllClasses'
@@ -24,6 +23,20 @@ import MarksEntry from './pages/teacher/MarkEntry'
 import MyResult from './pages/student/MyResult'
 import Assignments from './pages/student/Assignments'
 import CreateAssignment from './pages/teacher/CreateAssignment'
+
+// অ্যাডমিন প্যানেলের নতুন পেজগুলো ইম্পোর্ট করা হলো
+import ManageCourses from './pages/admin/ManageCourses'
+import GlobalNotice from './pages/admin/GlobalNotice'
+import AdminSettings from './pages/admin/AdminSettings'
+
+// শিক্ষক প্যানেলের নতুন পেজগুলো ইম্পোর্ট করা হলো
+import LeaveRequests from './pages/teacher/LeaveRequests'
+import UploadMaterials from './pages/teacher/UploadMaterials'
+
+// স্টুডেন্ট প্যানেলের পেজগুলো ইম্পোর্ট করা হলো
+import LeaveApplication from './pages/student/LeaveApplication'
+import StudentPresentations from './pages/student/StudentPresentations'
+import StudyMaterials from './pages/student/StudyMaterials'
 
 
 function HomePage() {
@@ -52,9 +65,12 @@ function App() {
       {/* Admin routes protected */}
       <Route element={<ProtectedRoute allowedRole="admin" />}>
         <Route path="/admin" element={<AdminLayout />} >
-        <Route index element={<AdminDashboard />} />
-        <Route path="teachers" element={<ManageTeachers />} />
-        <Route path="students" element={<ManageStudents />} />
+          <Route index element={<AdminDashboard />} />
+          <Route path="teachers" element={<ManageTeachers />} />
+          <Route path="students" element={<ManageStudents />} />
+          <Route path="courses" element={<ManageCourses />} />
+          <Route path="notices" element={<GlobalNotice />} />
+          <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Route>
 
@@ -65,18 +81,22 @@ function App() {
           <Route path="attendance" element={<Attendance />} />
           <Route path="marks" element={<MarksEntry />} />
           <Route path="assignments" element={<CreateAssignment />} />
+          <Route path="leave-requests" element={<LeaveRequests />} />
+          <Route path="upload-materials" element={<UploadMaterials />} />
         </Route>
       </Route>
 
       {/* Student routes protected */}
       <Route element={<ProtectedRoute allowedRole="student" />}>
         <Route path="/student" element={<StudentLayout />} >
-        <Route index element={<StudentDashboard />} />
-        <Route path="result" element={<MyResult />} />
-        <Route path="assignments" element={<Assignments />} />
+          <Route index element={<StudentDashboard />} />
+          <Route path="assignments" element={<Assignments />} />
+          <Route path="leave" element={<LeaveApplication />} />
+          <Route path="presentations" element={<StudentPresentations />} />
+          <Route path="materials" element={<StudyMaterials />} />
+          <Route path="result" element={<MyResult />} />
         </Route>
       </Route>
-
 
     </Routes>
   )
