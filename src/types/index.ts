@@ -71,3 +71,29 @@ export interface AttendanceRecord {
     deadline: string;
     submittedBy: string[];
   }
+
+  export interface Presentation {
+    _id: string;
+    studentId: string;
+    studentName: string;
+    topic: string;
+    subject: string;
+    date: string;
+    time: string;
+  }
+
+  export interface Course {
+    _id: string;
+    name: string;
+    subject: string;
+    teacherId: string;
+    teacherName: string;
+  }
+
+  export interface Notice {
+    _id: string;
+    title: string;
+    message: string;
+    postedBy: string;
+    createdAt: string;
+  }

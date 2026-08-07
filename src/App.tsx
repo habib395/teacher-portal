@@ -24,19 +24,17 @@ import MyResult from './pages/student/MyResult'
 import Assignments from './pages/student/Assignments'
 import CreateAssignment from './pages/teacher/CreateAssignment'
 
-// অ্যাডমিন প্যানেলের নতুন পেজগুলো ইম্পোর্ট করা হলো
-import ManageCourses from './pages/admin/ManageCourses'
-import GlobalNotice from './pages/admin/GlobalNotice'
+import AdminNotice from './pages/admin/AdminNotice'
 import AdminSettings from './pages/admin/AdminSettings'
 
-// শিক্ষক প্যানেলের নতুন পেজগুলো ইম্পোর্ট করা হলো
 import LeaveRequests from './pages/teacher/LeaveRequests'
 import UploadMaterials from './pages/teacher/UploadMaterials'
 
-// স্টুডেন্ট প্যানেলের পেজগুলো ইম্পোর্ট করা হলো
 import LeaveApplication from './pages/student/LeaveApplication'
 import StudentPresentations from './pages/student/StudentPresentations'
 import StudyMaterials from './pages/student/StudyMaterials'
+import AssignPresentation from './pages/teacher/AssignPresentation'
+import ManageCourses from './pages/admin/ManageCourse'
 
 
 function HomePage() {
@@ -69,7 +67,7 @@ function App() {
           <Route path="teachers" element={<ManageTeachers />} />
           <Route path="students" element={<ManageStudents />} />
           <Route path="courses" element={<ManageCourses />} />
-          <Route path="notices" element={<GlobalNotice />} />
+          <Route path="notices" element={<AdminNotice />} />
           <Route path="settings" element={<AdminSettings />} />
         </Route>
       </Route>
@@ -83,6 +81,7 @@ function App() {
           <Route path="assignments" element={<CreateAssignment />} />
           <Route path="leave-requests" element={<LeaveRequests />} />
           <Route path="upload-materials" element={<UploadMaterials />} />
+          <Route path="presentations" element={<AssignPresentation />} />
         </Route>
       </Route>
 

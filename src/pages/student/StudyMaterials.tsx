@@ -1,6 +1,5 @@
 import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -9,64 +8,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { BookOpen, Download, Search, FileText, Sparkles, FolderArchive, Video, FileCheck, AlertCircle } from "lucide-react";
-
-interface StudyMaterial {
-  id: string;
-  title: string;
-  subject: string;
-  category: "PDF Notes" | "Video Lecture" | "Source Code" | "Assignment Guide";
-  fileSize: string;
-  uploadDate: string;
-  downloadUrl: string;
-}
-
-const initialMaterials: StudyMaterial[] = [
-  {
-    id: "1",
-    title: "Complete MERN Stack Architecture Guide",
-    subject: "Web Development",
-    category: "PDF Notes",
-    fileSize: "4.5 MB",
-    uploadDate: "2026-08-01",
-    downloadUrl: "#",
-  },
-  {
-    id: "2",
-    title: "Docker & Kubernetes Deployment Masterclass",
-    subject: "Cloud & DevOps",
-    category: "Video Lecture",
-    fileSize: "120 MB",
-    uploadDate: "2026-08-03",
-    downloadUrl: "#",
-  },
-  {
-    id: "3",
-    title: "React Redux Toolkit Boilerplate Code",
-    subject: "Frontend Engineering",
-    category: "Source Code",
-    fileSize: "2.1 MB",
-    uploadDate: "2026-08-05",
-    downloadUrl: "#",
-  },
-  {
-    id: "4",
-    title: "Database Normalization & Indexing Notes",
-    subject: "Database Systems",
-    category: "PDF Notes",
-    fileSize: "3.2 MB",
-    uploadDate: "2026-08-06",
-    downloadUrl: "#",
-  },
-];
+import { BookOpen, Download, Search, FileText, Sparkles, FolderArchive, Video, AlertCircle } from "lucide-react";
+import { useGetStudyMaterialsQuery } from "@/features/studymaterials/studyMaterialApi";
 
 export default function StudyMaterials() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
 
+  // ডাইনামিক API হুক কল
+  const { data: materials, isLoading, isError } = useGetStudyMaterialsQuery();
+
   // ফিল্টারড মেটেরিয়ালস
   const filteredMaterials = useMemo(() => {
-    return initialMaterials.filter((item) => {
+    if (!materials) return [];
+    return materials.filter((item) => {
       const matchesSearch =
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.subject.toLowerCase().includes(searchQuery.toLowerCase());
@@ -75,11 +30,11 @@ export default function StudyMaterials() {
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [materials, searchQuery, selectedCategory]);
 
-  const totalCount = initialMaterials.length;
-  const pdfCount = initialMaterials.filter((m) => m.category === "PDF Notes").length;
-  const videoCount = initialMaterials.filter((m) => m.category === "Video Lecture").length;
+  const totalCount = materials?.length || 0;
+  const pdfCount = materials?.filter((m) => m.category === "PDF Notes").length || 0;
+  const videoCount = materials?.filter((m) => m.category === "Video Lecture").length || 0;
 
   return (
     <div className="space-y-8 pb-10">
@@ -145,7 +100,7 @@ export default function StudyMaterials() {
 
         {/* Category Pills */}
         <div className="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-          {["All", "PDF Notes", "Video Lecture", "Source Code"].map((cat) => (
+          {["All", "PDF Notes", "Video Lecture", "Source Code", "Assignment Guide"].map((cat) => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
@@ -178,9 +133,27 @@ export default function StudyMaterials() {
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-slate-100 text-sm">
-            {filteredMaterials.length > 0 ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-16 text-slate-400">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="font-semibold text-slate-500">Loading study materials...</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center py-16 text-rose-500">
+                  <div className="flex flex-col items-center justify-center space-y-2">
+                    <AlertCircle className="w-8 h-8" />
+                    <p className="font-semibold">Failed to load study materials.</p>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : filteredMaterials.length > 0 ? (
               filteredMaterials.map((item) => (
-                <TableRow key={item.id} className="hover:bg-slate-50/60 transition-colors group">
+                <TableRow key={item._id} className="hover:bg-slate-50/60 transition-colors group">
                   <TableCell className="py-4 px-6 space-y-1">
                     <div className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors flex items-center gap-2.5">
                       <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
@@ -204,7 +177,7 @@ export default function StudyMaterials() {
                   <TableCell className="py-4 px-6 text-right">
                     <Button
                       size="sm"
-                      onClick={() => alert(`Downloading "${item.title}"...`)}
+                      onClick={() => window.open(item.downloadUrl, "_blank")}
                       className="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold px-4 h-9 shadow-sm shadow-indigo-600/20 flex items-center gap-1.5 ml-auto"
                     >
                       <Download className="w-3.5 h-3.5" /> Download
