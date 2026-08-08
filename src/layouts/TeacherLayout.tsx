@@ -22,6 +22,7 @@ export default function TeacherLayout () {
                     <Link to="/teacher/marks" >Marks Entry</Link>
                     <Link to="/teacher/assignments">Assignments</Link>
                     <Link to="/teacher/upload-materials">Upload Materials</Link>
+                    <Link to="/teacher/leave-requests">Leave requests</Link>
                     <Link to="/teacher/presentations">Presentations</Link>
                     <Link to="/teacher/settings">Settings</Link>
                 </nav>

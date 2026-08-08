@@ -112,3 +112,16 @@ export interface StudyMaterial {
   uploadDate: string;
   downloadUrl: string;
 }
+
+export type LeaveStatus = "pending" | "approved" | "rejected";
+
+export interface Leave {
+  _id: string;
+  studentId: string;
+  studentName: string;
+  reason: string;
+  fromDate: string;
+  toDate: string;
+  attachmentUrl?: string;
+  status: LeaveStatus;
+}
