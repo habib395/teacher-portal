@@ -1,5 +1,5 @@
 import SettingsPage from "@/components/shared/SettingsPage";
 
-export default function AdminSettings() {
+export default function StudentSettings() {
   return <SettingsPage />;
 }

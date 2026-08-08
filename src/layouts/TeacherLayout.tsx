@@ -21,7 +21,9 @@ export default function TeacherLayout () {
                     <Link to="/teacher/attendance" >Attendance</Link>
                     <Link to="/teacher/marks" >Marks Entry</Link>
                     <Link to="/teacher/assignments">Assignments</Link>
+                    <Link to="/teacher/upload-materials">Upload Materials</Link>
                     <Link to="/teacher/presentations">Presentations</Link>
+                    <Link to="/teacher/settings">Settings</Link>
                 </nav>
             </aside>
 

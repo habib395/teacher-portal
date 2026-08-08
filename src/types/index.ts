@@ -26,7 +26,6 @@ export interface Teacher {
 
 export interface Student {
   _id: string;
-
   name: string;
   email: string;
   classId?: string;
@@ -97,3 +96,19 @@ export interface AttendanceRecord {
     postedBy: string;
     createdAt: string;
   }
+
+export type MaterialCategory =
+  | "PDF Notes"
+  | "Video Lecture"
+  | "Source Code"
+  | "Assignment Guide";
+
+export interface StudyMaterial {
+  _id: string;
+  title: string;
+  subject: string;
+  category: MaterialCategory;
+  fileSize: string;
+  uploadDate: string;
+  downloadUrl: string;
+}

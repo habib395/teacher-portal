@@ -75,6 +75,12 @@ export default function StudentLayout() {
                         >
                             <FileText className="w-4 h-4" /> My Result
                         </Link>
+                        <Link 
+                            to="/student/settings" 
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all duration-200"
+                        >
+                            <FileText className="w-4 h-4" /> Settings
+                        </Link>
                     </nav>
                 </div>
 

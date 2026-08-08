@@ -17,6 +17,16 @@ interface LoginResponse {
   };
 }
 
+interface UpdateProfilePayload {
+  name: string;
+  email: string;
+}
+
+interface ChangePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<LoginResponse, LoginRequest>({
@@ -26,7 +36,25 @@ export const authApi = apiSlice.injectEndpoints({
         body: credentials,
       }),
     }),
+    updateProfile: builder.mutation<{ message: string }, UpdateProfilePayload>({
+      query: (payload) => ({
+        url: "/auth/profile",
+        method: "PUT",
+        body: payload,
+      }),
+    }),
+    changePassword: builder.mutation<{ message: string }, ChangePasswordPayload>({
+      query: (payload) => ({
+        url: "/auth/change-password",
+        method: "PUT",
+        body: payload,
+      }),
+    }),
   }),
 });
 
-export const { useLoginMutation } = authApi;
+export const {
+  useLoginMutation,
+  useUpdateProfileMutation,
+  useChangePasswordMutation,
+} = authApi;

@@ -35,6 +35,8 @@ import StudentPresentations from './pages/student/StudentPresentations'
 import StudyMaterials from './pages/student/StudyMaterials'
 import AssignPresentation from './pages/teacher/AssignPresentation'
 import ManageCourses from './pages/admin/ManageCourse'
+import TeacherSettings from './pages/teacher/TeacherSettings'
+import StudentSettings from './pages/student/StudentSettings'
 
 
 function HomePage() {
@@ -82,6 +84,7 @@ function App() {
           <Route path="leave-requests" element={<LeaveRequests />} />
           <Route path="upload-materials" element={<UploadMaterials />} />
           <Route path="presentations" element={<AssignPresentation />} />
+          <Route path="settings" element={<TeacherSettings />} />
         </Route>
       </Route>
 
@@ -94,6 +97,8 @@ function App() {
           <Route path="presentations" element={<StudentPresentations />} />
           <Route path="materials" element={<StudyMaterials />} />
           <Route path="result" element={<MyResult />} />
+          <Route path="settings" element={<StudentSettings />} />
+          <Route path="materials" element={<StudyMaterials />} /> 
         </Route>
       </Route>
 

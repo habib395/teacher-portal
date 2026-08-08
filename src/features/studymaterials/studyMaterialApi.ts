@@ -1,14 +1,5 @@
-import { apiSlice } from "../api/apiSlice";
-
-export interface StudyMaterial {
-  _id: string;
-  title: string;
-  subject: string;
-  category: "PDF Notes" | "Video Lecture" | "Source Code" | "Assignment Guide";
-  fileSize: string;
-  uploadDate: string;
-  downloadUrl: string;
-}
+import { apiSlice } from "@/features/api/apiSlice";
+import type { StudyMaterial } from "@/types";
 
 export const studyMaterialApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -16,7 +7,26 @@ export const studyMaterialApi = apiSlice.injectEndpoints({
       query: () => "/study-materials",
       providesTags: ["StudyMaterial"],
     }),
+    uploadStudyMaterial: builder.mutation<StudyMaterial, FormData>({
+      query: (formData) => ({
+        url: "/study-materials",
+        method: "POST",
+        body: formData,
+      }),
+      invalidatesTags: ["StudyMaterial"],
+    }),
+    deleteStudyMaterial: builder.mutation<{ message: string }, string>({
+      query: (id) => ({
+        url: `/study-materials/${id}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["StudyMaterial"],
+    }),
   }),
 });
 
-export const { useGetStudyMaterialsQuery } = studyMaterialApi;
+export const {
+  useGetStudyMaterialsQuery,
+  useUploadStudyMaterialMutation,
+  useDeleteStudyMaterialMutation,
+} = studyMaterialApi;
