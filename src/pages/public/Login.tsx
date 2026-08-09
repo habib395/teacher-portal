@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { login } from "@/features/auth/authSlice";
 import { useLoginMutation } from "@/features/auth/aurhApi";
+import { toast } from "sonner";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -30,11 +31,13 @@ export default function Login() {
           token: result.token,
         })
       );
-  
+      toast.success(`Welcome back, ${result.user.name}!`);
       navigate(`/${result.user.role}`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      setError(err?.data?.message || "Login failed. Please try again.");
+      const message = err?.data?.message || "Login failed. Please try again.";
+      setError(message);
+      toast.error(message);
     }
   };
 

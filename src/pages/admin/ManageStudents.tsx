@@ -25,6 +25,7 @@ import {
   useDeleteStudentMutation,
 } from "@/features/student/studentApi";
 import { UserPlus, Edit3, Trash2, Mail, GraduationCap, Hash, Sparkles, AlertCircle, Users } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ManageStudents() {
   const { data: students, isLoading, isError } = useGetStudentsQuery();
@@ -59,32 +60,31 @@ export default function ManageStudents() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this student?")) {
-      try {
-        await deleteStudent(id).unwrap();
-      } catch (err) {
-        console.error("Failed to delete student:", err);
-      }
+    try {
+      await deleteStudent(id).unwrap();
+      toast.success("Student deleted successfully!");
+    } catch (err) {
+      console.error("Failed to delete student:", err);
+      toast.error("Failed to delete student.");
     }
   };
-
+  
   const handleSave = async () => {
-    if (!name || !email || !className || !rollNumber) {
-      alert("Please fill in all the required fields.");
-      return;
-    }
     try {
       if (editingStudent) {
         await updateStudent({
           id: editingStudent._id,
           data: { name, email, className, rollNumber },
         }).unwrap();
+        toast.success("Student updated successfully!");
       } else {
         await createStudent({ name, email, className, rollNumber }).unwrap();
+        toast.success("Student added successfully!");
       }
       setIsDialogOpen(false);
     } catch (err) {
       console.error("Failed to save student:", err);
+      toast.error("Failed to save student.");
     }
   };
 

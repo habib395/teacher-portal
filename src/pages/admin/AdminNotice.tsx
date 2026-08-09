@@ -7,6 +7,7 @@ import {
   useCreateNoticeMutation,
   useDeleteNoticeMutation,
 } from "@/features/notice/noticeApi";
+import { toast } from "sonner";
 
 export default function GlobalNotice() {
   const [title, setTitle] = useState("");
@@ -16,27 +17,31 @@ export default function GlobalNotice() {
   const [createNotice, { isLoading: isCreating }] = useCreateNoticeMutation();
   const [deleteNotice] = useDeleteNoticeMutation();
 
-  const handleCreate = async () => {
-    if (!title || !message) {
-      alert("Please fill in both fields.");
-      return;
-    }
-    try {
-      await createNotice({ title, message }).unwrap();
-      setTitle("");
-      setMessage("");
-    } catch (err) {
-      console.error("Failed to create notice:", err);
-    }
-  };
+const handleCreate = async () => {
+  if (!title || !message) {
+    toast.error("Please fill in both fields.");
+    return;
+  }
+  try {
+    await createNotice({ title, message }).unwrap();
+    setTitle("");
+    setMessage("");
+    toast.success("Notice posted successfully!");
+  } catch (err) {
+    console.error("Failed to create notice:", err);
+    toast.error("Failed to post notice.");
+  }
+};
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteNotice(id).unwrap();
-    } catch (err) {
-      console.error("Failed to delete notice:", err);
-    }
-  };
+const handleDelete = async (id: string) => {
+  try {
+    await deleteNotice(id).unwrap();
+    toast.success("Notice deleted successfully!");
+  } catch (err) {
+    console.error("Failed to delete notice:", err);
+    toast.error("Failed to delete notice.");
+  }
+};
 
   return (
     <div>

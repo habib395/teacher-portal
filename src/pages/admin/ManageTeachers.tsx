@@ -25,6 +25,7 @@ import {
   useDeleteTeacherMutation,
 } from "@/features/teacher/teacherApi";
 import { UserPlus, Edit3, Trash2, Mail, Phone, BookOpen, Sparkles, AlertCircle, Users } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ManageTeachers() {
   const { data: teachers, isLoading, isError } = useGetTeachersQuery();
@@ -62,29 +63,30 @@ export default function ManageTeachers() {
     if (confirm("Are you sure you want to delete this teacher?")) {
       try {
         await deleteTeacher(id).unwrap();
+        toast.success("Teacher deleted successfully!");
       } catch (err) {
         console.error("Failed to delete teacher:", err);
+        toast.error("Failed to delete teacher.");
       }
     }
   };
 
   const handleSave = async () => {
-    if (!name || !email || !subject || !phone) {
-      alert("Please fill in all the required fields.");
-      return;
-    }
     try {
       if (editingTeacher) {
         await updateTeacher({
           id: editingTeacher._id,
           data: { name, email, subject, phone },
         }).unwrap();
+        toast.success("Teacher updated successfully!");
       } else {
         await createTeacher({ name, email, subject, phone }).unwrap();
+        toast.success("Teacher added successfully!");
       }
       setIsDialogOpen(false);
     } catch (err) {
       console.error("Failed to save teacher:", err);
+      toast.error("Failed to save teacher.");
     }
   };
 

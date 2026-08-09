@@ -15,34 +15,32 @@ import {
 } from "@/features/assignment/assignmentApi";
 import type { RootState } from "@/app/store";
 import { BookOpen, CheckCircle2, Clock, Send, Sparkles, AlertCircle, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 export default function Assignments() {
   const studentProfileId = useSelector((state: RootState) => state.auth.studentProfile);
   const [filterStatus, setFilterStatus] = useState<"all" | "pending" | "submitted">("all");
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  // const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const { data: assignments, isLoading, isError } = useGetAssignmentsQuery();
   const [submitAssignment, { isLoading: isSubmitting }] = useSubmitAssignmentMutation();
 
-  const handleSubmit = async (assignmentId: string, title: string) => {
-    try {
-      await submitAssignment(assignmentId).unwrap();
-      setSuccessMsg(`Successfully submitted "${title}"!`);
-      setTimeout(() => setSuccessMsg(null), 4000);
-    } catch (err) {
-      console.error("Failed to submit assignment:", err);
-      alert("Failed to submit assignment. Please try again.");
-    }
-  };
+const handleSubmit = async (assignmentId: string) => {
+  try {
+    await submitAssignment(assignmentId).unwrap();
+    toast.success("Assignment submitted successfully!");
+  } catch (err) {
+    console.error("Failed to submit assignment:", err);
+    toast.error("Failed to submit assignment.");
+  }
+};
 
-  // স্ট্যাটিস্টিকস ক্যালকুলেশন
   const totalCount = assignments?.length || 0;
   const submittedCount = assignments?.filter((a) =>
     studentProfileId ? a.submittedBy.includes(studentProfileId) : false
   ).length || 0;
   const pendingCount = totalCount - submittedCount;
 
-  // ফিল্টারড অ্যাসাইনমেন্টস
   const filteredAssignments = useMemo(() => {
     if (!assignments) return [];
     return assignments.filter((assignment) => {
@@ -89,12 +87,12 @@ export default function Assignments() {
       </div>
 
       {/* Success Notification Banner */}
-      {successMsg && (
+      {/* {successMsg && (
         <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl shadow-sm text-sm font-semibold animate-fadeIn">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           {successMsg}
         </div>
-      )}
+      )} */}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
@@ -208,7 +206,7 @@ export default function Assignments() {
                       <Button
                         size="sm"
                         disabled={isSubmitted || isSubmitting}
-                        onClick={() => handleSubmit(assignment._id, assignment.title)}
+                        onClick={() => handleSubmit(assignment._id)}
                         className={`rounded-xl text-xs font-bold px-5 h-9 transition-all shadow-xs flex items-center gap-1.5 ml-auto ${
                           isSubmitted
                             ? "bg-emerald-100 text-emerald-700 cursor-not-allowed shadow-none"

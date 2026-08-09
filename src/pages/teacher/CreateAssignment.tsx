@@ -14,20 +14,21 @@ import {
   useGetAssignmentsQuery,
   useCreateAssignmentMutation,
 } from "@/features/assignment/assignmentApi";
-import { FilePlus2, Calendar, BookOpen, Users, Sparkles, CheckCircle2, AlertCircle, PlusCircle } from "lucide-react";
+import { FilePlus2, Calendar, BookOpen, Users, Sparkles, AlertCircle, PlusCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function CreateAssignment() {
   const [title, setTitle] = useState("");
   const [subject, setSubject] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [successMsg, setSuccessMsg] = useState(false);
+  // const [successMsg, setSuccessMsg] = useState(false);
 
   const { data: assignments, isLoading } = useGetAssignmentsQuery();
   const [createAssignment, { isLoading: isCreating }] = useCreateAssignmentMutation();
 
   const handleCreate = async () => {
     if (!title || !subject || !deadline) {
-      alert("Please fill in all fields.");
+      toast.error("Please fill in all fields.");
       return;
     }
     try {
@@ -35,11 +36,10 @@ export default function CreateAssignment() {
       setTitle("");
       setSubject("");
       setDeadline("");
-      setSuccessMsg(true);
-      setTimeout(() => setSuccessMsg(false), 4000);
+      toast.success("Assignment created successfully!");
     } catch (err) {
       console.error("Failed to create assignment:", err);
-      alert("Failed to create assignment.");
+      toast.error("Failed to create assignment.");
     }
   };
 
@@ -62,12 +62,12 @@ export default function CreateAssignment() {
       </div>
 
       {/* Success Notification Banner */}
-      {successMsg && (
+      {/* {successMsg && (
         <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl shadow-sm text-sm font-semibold animate-fadeIn">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           Assignment has been created and published successfully!
         </div>
-      )}
+      )} */}
 
       {/* Create Assignment Form Card */}
       <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-100 shadow-sm space-y-6">

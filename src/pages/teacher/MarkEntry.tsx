@@ -13,6 +13,7 @@ import { useGetStudentsQuery } from "@/features/student/studentApi";
 import type { MarksRecord } from "@/types";
 import { useSaveMarksMutation } from "@/features/marks/markApi";
 import { BookOpen, Search, Award, Users, Save, CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function MarksEntry() {
   const [subject, setSubject] = useState("Advanced Frontend");
@@ -34,7 +35,6 @@ export default function MarksEntry() {
     }));
   }, [students, subject, manualMarks]);
 
-  // ফিল্টারড রেকর্ডস (সার্চ বারের জন্য)
   const filteredRecords = useMemo(() => {
     return records.filter(
       (r) =>
@@ -43,7 +43,6 @@ export default function MarksEntry() {
     );
   }, [records, searchQuery]);
 
-  // গ্রেড ক্যালকুলেশন হেল্পার
   const calculateGrade = (marks: number) => {
     if (marks >= 80) return { grade: "A+", color: "text-emerald-600 bg-emerald-50" };
     if (marks >= 70) return { grade: "A", color: "text-indigo-600 bg-indigo-50" };
@@ -61,16 +60,16 @@ export default function MarksEntry() {
     setManualMarks((prev) => ({ ...prev, [studentId]: num }));
   };
 
-  const handleSaveMarks = async () => {
-    try {
-      await saveMarks({ records }).unwrap();
-      alert("Marks saved successfully!");
-      setManualMarks({});
-    } catch (err) {
-      console.error("Failed to save marks:", err);
-      alert("Failed to save marks.");
-    }
-  };
+const handleSaveMarks = async () => {
+  try {
+    await saveMarks({ records }).unwrap();
+    toast.success("Marks saved successfully!");
+    setManualMarks({});
+  } catch (err) {
+    console.error("Failed to save marks:", err);
+    toast.error("Failed to save marks.");
+  }
+};
 
   if (studentsLoading) {
     return (

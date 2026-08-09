@@ -32,6 +32,7 @@ import {
   useDeleteCourseMutation,
 } from "@/features/course/courseApi";
 import type { Course } from "@/types";
+import { toast } from "sonner";
 
 export default function ManageCourses() {
   const { data: teachers } = useGetTeachersQuery();
@@ -63,39 +64,44 @@ export default function ManageCourses() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteCourse(id).unwrap();
-    } catch (err) {
-      console.error("Failed to delete course:", err);
-    }
+const handleDelete = async (id: string) => {
+  try {
+    await deleteCourse(id).unwrap();
+    toast.success("Course deleted successfully!");
+  } catch (err) {
+    console.error("Failed to delete course:", err);
+    toast.error("Failed to delete course.");
+  }
+};
+
+const handleSave = async () => {
+  const selectedTeacher = teachers?.find((t) => t._id === teacherId);
+  if (!name || !subject || !selectedTeacher) {
+    toast.error("Please fill in all fields.");
+    return;
+  }
+
+  const payload = {
+    name,
+    subject,
+    teacherId,
+    teacherName: selectedTeacher.name,
   };
 
-  const handleSave = async () => {
-    const selectedTeacher = teachers?.find((t) => t._id === teacherId);
-    if (!name || !subject || !selectedTeacher) {
-      alert("Please fill in all fields.");
-      return;
+  try {
+    if (editingCourse) {
+      await updateCourse({ id: editingCourse._id, data: payload }).unwrap();
+      toast.success("Course updated successfully!");
+    } else {
+      await createCourse(payload).unwrap();
+      toast.success("Course added successfully!");
     }
-
-    const payload = {
-      name,
-      subject,
-      teacherId,
-      teacherName: selectedTeacher.name,
-    };
-
-    try {
-      if (editingCourse) {
-        await updateCourse({ id: editingCourse._id, data: payload }).unwrap();
-      } else {
-        await createCourse(payload).unwrap();
-      }
-      setIsDialogOpen(false);
-    } catch (err) {
-      console.error("Failed to save course:", err);
-    }
-  };
+    setIsDialogOpen(false);
+  } catch (err) {
+    console.error("Failed to save course:", err);
+    toast.error("Failed to save course.");
+  }
+};
 
   if (isLoading) return <p>Loading courses...</p>;
 

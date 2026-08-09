@@ -20,6 +20,7 @@ import {
 
 import type { MaterialCategory } from "@/types";
 import { useDeleteStudyMaterialMutation, useGetStudyMaterialsQuery, useUploadStudyMaterialMutation } from "@/features/studymaterials/studyMaterialApi";
+import { toast } from "sonner";
 
 const categories: MaterialCategory[] = [
   "PDF Notes",
@@ -38,36 +39,38 @@ export default function UploadMaterials() {
   const [uploadMaterial, { isLoading: isUploading }] = useUploadStudyMaterialMutation();
   const [deleteMaterial] = useDeleteStudyMaterialMutation();
 
-  const handleUpload = async () => {
-    if (!title || !subject || !category || !file) {
-      alert("Please fill in all fields and select a file.");
-      return;
-    }
+const handleUpload = async () => {
+  if (!title || !subject || !category || !file) {
+    toast.error("Please fill in all fields and select a file.");
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("subject", subject);
-    formData.append("category", category);
-    formData.append("file", file);
+  const formData = new FormData();
+  formData.append("title", title);
+  formData.append("subject", subject);
+  formData.append("category", category);
+  formData.append("file", file);
 
-    try {
-      await uploadMaterial(formData).unwrap();
-      setTitle("");
-      setSubject("");
-      setCategory("");
-      setFile(null);
-      alert("Material uploaded successfully!");
-    } catch (err) {
-      console.error("Failed to upload material:", err);
-      alert("Failed to upload material.");
-    }
-  };
+  try {
+    await uploadMaterial(formData).unwrap();
+    setTitle("");
+    setSubject("");
+    setCategory("");
+    setFile(null);
+    toast.success("Material uploaded successfully!");
+  } catch (err) {
+    console.error("Failed to upload material:", err);
+    toast.error("Failed to upload material.");
+  }
+};
 
   const handleDelete = async (id: string) => {
     try {
       await deleteMaterial(id).unwrap();
+      toast.success("Material Delete successfully!");
     } catch (err) {
       console.error("Failed to delete material:", err);
+      toast.error("Failed to Delete material.");
     }
   };
 

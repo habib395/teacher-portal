@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { login } from "@/features/auth/authSlice";
 import type { RootState } from "@/app/store";
 import { useChangePasswordMutation, useUpdateProfileMutation } from "@/features/auth/aurhApi";
+import { toast } from "sonner";
 
 export default function SettingsPage() {
   const dispatch = useDispatch();
@@ -22,46 +23,46 @@ export default function SettingsPage() {
   const [updateProfile, { isLoading: isUpdatingProfile }] = useUpdateProfileMutation();
   const [changePassword, { isLoading: isChangingPassword }] = useChangePasswordMutation();
 
-  const handleUpdateProfile = async () => {
-    if (!name || !email) {
-      alert("Please fill in both fields.");
-      return;
-    }
-    try {
-      await updateProfile({ name, email }).unwrap();
+const handleUpdateProfile = async () => {
+  if (!name || !email) {
+    toast.error("Please fill in both fields.");
+    return;
+  }
+  try {
+    await updateProfile({ name, email }).unwrap();
 
-      dispatch(
-        login({
-          role: currentUser.role,
-          name,
-          userId: currentUser.userId!,
-          studentProfile: currentUser.studentProfile,
-          token: currentUser.token!,
-        })
-      );
+    dispatch(
+      login({
+        role: currentUser.role,
+        name,
+        userId: currentUser.userId!,
+        studentProfile: currentUser.studentProfile,
+        token: currentUser.token!,
+      })
+    );
 
-      alert("Profile updated successfully!");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      alert(err?.data?.message || "Failed to update profile.");
-    }
-  };
+    toast.success("Profile updated successfully!");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    toast.error(err?.data?.message || "Failed to update profile.");
+  }
+};
 
-  const handleChangePassword = async () => {
-    if (!currentPassword || !newPassword) {
-      alert("Please fill in both password fields.");
-      return;
-    }
-    try {
-      await changePassword({ currentPassword, newPassword }).unwrap();
-      setCurrentPassword("");
-      setNewPassword("");
-      alert("Password changed successfully!");
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } catch (err: any) {
-      alert(err?.data?.message || "Failed to change password.");
-    }
-  };
+const handleChangePassword = async () => {
+  if (!currentPassword || !newPassword) {
+    toast.error("Please fill in both password fields.");
+    return;
+  }
+  try {
+    await changePassword({ currentPassword, newPassword }).unwrap();
+    setCurrentPassword("");
+    setNewPassword("");
+    toast.success("Password changed successfully!");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (err: any) {
+    toast.error(err?.data?.message || "Failed to change password.");
+  }
+};
 
   return (
     <div>

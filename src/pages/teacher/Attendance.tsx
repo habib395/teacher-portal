@@ -16,6 +16,7 @@ import {
 } from "@/features/attendance/attendanceApi";
 import type { AttendanceRecord, AttendanceStatus } from "@/types";
 import { Calendar, Search, CheckCircle2, XCircle, Users, Save, Sparkles, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 function getTodayDate() {
   return new Date().toISOString().split("T")[0];
@@ -25,7 +26,7 @@ export default function Attendance() {
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
   const [searchQuery, setSearchQuery] = useState("");
   const [manualOverrides, setManualOverrides] = useState<Record<string, AttendanceStatus>>({});
-  const [showNotification, setShowNotification] = useState(false);
+  // const [showNotification, setShowNotification] = useState(false);
 
   const { data: students, isLoading: studentsLoading } = useGetStudentsQuery();
   const { data: existingAttendance } = useGetAttendanceByDateQuery(selectedDate);
@@ -75,12 +76,11 @@ export default function Attendance() {
   const handleSaveAttendance = async () => {
     try {
       await saveAttendance({ date: selectedDate, records }).unwrap();
-      setShowNotification(true);
-      setTimeout(() => setShowNotification(false), 3500);
+      toast.success("Attendance saved successfully!");
       setManualOverrides({});
     } catch (err) {
       console.error("Failed to save attendance:", err);
-      alert("Failed to save attendance.");
+      toast.error("Failed to save attendance.");
     }
   };
 
@@ -133,12 +133,12 @@ export default function Attendance() {
       </div>
 
       {/* Success Notification Alert */}
-      {showNotification && (
+      {/* {showNotification && (
         <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl shadow-sm text-sm font-semibold animate-fadeIn">
           <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
           Attendance successfully recorded and saved for {selectedDate}!
         </div>
-      )}
+      )} */}
 
       {/* Modern Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">

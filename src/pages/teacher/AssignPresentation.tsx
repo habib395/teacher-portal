@@ -23,6 +23,7 @@ import {
   useCreatePresentationMutation,
   useDeletePresentationMutation,
 } from "@/features/presentation/presentationApi";
+import { toast } from "sonner";
 
 export default function AssignPresentation() {
   const [studentId, setStudentId] = useState("");
@@ -36,39 +37,34 @@ export default function AssignPresentation() {
   const [createPresentation, { isLoading: isCreating }] = useCreatePresentationMutation();
   const [deletePresentation] = useDeletePresentationMutation();
 
-  const handleAssign = async () => {
-    if (!studentId || !topic || !subject || !date || !time) {
-      alert("Please fill in all fields.");
-      return;
-    }
+const handleAssign = async () => {
+  const selectedStudent = students?.find((s) => s._id === studentId);
+  if (!studentId || !topic || !subject || !date || !time || !selectedStudent) {
+    toast.error("Please fill in all fields and select a valid student.");
+    return;
+  }
 
-    const selectedStudent = students?.find((s) => s._id === studentId);
-    if (!selectedStudent) {
-      alert("Please select a valid student.");
-      return;
-    }
+  try {
+    await createPresentation({
+      studentId,
+      studentName: selectedStudent.name,
+      topic,
+      subject,
+      date,
+      time,
+    }).unwrap();
 
-    try {
-      await createPresentation({
-        studentId,
-        studentName: selectedStudent.name,
-        topic,
-        subject,
-        date,
-        time,
-      }).unwrap();
-
-      setStudentId("");
-      setTopic("");
-      setSubject("");
-      setDate("");
-      setTime("");
-      alert("Presentation assigned successfully!");
-    } catch (err) {
-      console.error("Failed to assign presentation:", err);
-      alert("Failed to assign presentation.");
-    }
-  };
+    setStudentId("");
+    setTopic("");
+    setSubject("");
+    setDate("");
+    setTime("");
+    toast.success("Presentation assigned successfully!");
+  } catch (err) {
+    console.error("Failed to assign presentation:", err);
+    toast.error("Failed to assign presentation.");
+  }
+};
 
   const handleDelete = async (id: string) => {
     try {
