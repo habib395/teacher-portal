@@ -4,6 +4,7 @@ import type { Notice } from "@/types";
 interface CreateNoticePayload {
   title: string;
   message: string;
+  targetClassGroupId?: string;
 }
 
 export const noticeApi = apiSlice.injectEndpoints({

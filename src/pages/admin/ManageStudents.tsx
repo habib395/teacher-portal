@@ -10,6 +10,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useGetClassGroupsQuery } from "@/features/classGroup/classGroupApi";
+import {
   Table,
   TableBody,
   TableCell,
@@ -40,24 +48,34 @@ export default function ManageStudents() {
   const [email, setEmail] = useState("");
   const [className, setClassName] = useState("");
   const [rollNumber, setRollNumber] = useState("");
+  const { data: classGroups } = useGetClassGroupsQuery();
+const [classGroupId, setClassGroupId] = useState<string>("none");
 
-  const openAddDialog = () => {
-    setEditingStudent(null);
-    setName("");
-    setEmail("");
-    setClassName("");
-    setRollNumber("");
-    setIsDialogOpen(true);
-  };
+// const getClassGroupLabel = (id?: string) => {
+//   if (!id || !classGroups) return "—";
+//   const cg = classGroups.find((c) => c._id === id);
+//   return cg ? `${cg.programName} — ${cg.yearName}` : "Unknown";
+// };
 
-  const openEditDialog = (student: Student) => {
-    setEditingStudent(student);
-    setName(student.name);
-    setEmail(student.email);
-    setClassName(student.className);
-    setRollNumber(student.rollNumber);
-    setIsDialogOpen(true);
-  };
+const openAddDialog = () => {
+  setEditingStudent(null);
+  setName("");
+  setEmail("");
+  setClassName("");
+  setRollNumber("");
+  setClassGroupId("none");
+  setIsDialogOpen(true);
+};
+
+const openEditDialog = (student: Student) => {
+  setEditingStudent(student);
+  setName(student.name);
+  setEmail(student.email);
+  setClassName(student.className);
+  setRollNumber(student.rollNumber);
+  setClassGroupId(student.classGroupId || "none");
+  setIsDialogOpen(true);
+};
 
   const handleDelete = async (id: string) => {
     try {
@@ -70,15 +88,20 @@ export default function ManageStudents() {
   };
   
   const handleSave = async () => {
+    const payload = {
+      name,
+      email,
+      className,
+      rollNumber,
+      classGroupId: classGroupId === "none" ? undefined : classGroupId,
+    };
+  
     try {
       if (editingStudent) {
-        await updateStudent({
-          id: editingStudent._id,
-          data: { name, email, className, rollNumber },
-        }).unwrap();
+        await updateStudent({ id: editingStudent._id, data: payload }).unwrap();
         toast.success("Student updated successfully!");
       } else {
-        await createStudent({ name, email, className, rollNumber }).unwrap();
+        await createStudent(payload).unwrap();
         toast.success("Student added successfully!");
       }
       setIsDialogOpen(false);
@@ -259,6 +282,26 @@ export default function ManageStudents() {
                 onChange={(e) => setRollNumber(e.target.value)} 
                 className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700 outline-none font-mono"
               />
+              <div>
+  <Label htmlFor="classGroup">Class (Batch)</Label>
+  {classGroups ? (
+    <Select value={classGroupId} onValueChange={setClassGroupId}>
+      <SelectTrigger id="classGroup">
+        <SelectValue placeholder="Select class" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="none">Not Assigned</SelectItem>
+        {classGroups.map((cg) => (
+          <SelectItem key={cg._id} value={cg._id}>
+            {cg.programName} — {cg.yearName}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  ) : (
+    <p className="text-sm text-gray-400">Loading classes...</p>
+  )}
+</div>
             </div>
           </div>
 

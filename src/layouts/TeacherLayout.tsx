@@ -19,11 +19,14 @@ export default function TeacherLayout () {
                 <nav className="mt-6 flex flex-col gap-3">
                     <Link to="/teacher" >Dashboard</Link>
                     <Link to="/teacher/attendance" >Attendance</Link>
+                    <Link to="/teacher/my-class/attendance">My Class Attendance</Link>
                     <Link to="/teacher/marks" >Marks Entry</Link>
                     <Link to="/teacher/assignments">Assignments</Link>
                     <Link to="/teacher/upload-materials">Upload Materials</Link>
                     <Link to="/teacher/leave-requests">Leave requests</Link>
                     <Link to="/teacher/presentations">Presentations</Link>
+                    <Link to="/teacher/my-class/results">My Class Results</Link>
+                    <Link to="/teacher/my-class/notice">Class Notice</Link>
                     <Link to="/teacher/settings">Settings</Link>
                 </nav>
             </aside>

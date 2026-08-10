@@ -37,6 +37,10 @@ import AssignPresentation from './pages/teacher/AssignPresentation'
 import ManageCourses from './pages/admin/ManageCourse'
 import TeacherSettings from './pages/teacher/TeacherSettings'
 import StudentSettings from './pages/student/StudentSettings'
+import ManageClasses from './pages/admin/ManageClasses'
+import MyClassAttendance from "@/pages/teacher/MyClassAttendance";
+import ClassNotice from './pages/teacher/ClassNotice'
+import MyClassResults from './pages/teacher/MyClassResults'
 
 
 function HomePage() {
@@ -68,6 +72,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="teachers" element={<ManageTeachers />} />
           <Route path="students" element={<ManageStudents />} />
+          <Route path="classes" element={<ManageClasses />} />
           <Route path="courses" element={<ManageCourses />} />
           <Route path="notices" element={<AdminNotice />} />
           <Route path="settings" element={<AdminSettings />} />
@@ -85,6 +90,9 @@ function App() {
           <Route path="upload-materials" element={<UploadMaterials />} />
           <Route path="presentations" element={<AssignPresentation />} />
           <Route path="settings" element={<TeacherSettings />} />
+          <Route path="my-class/attendance" element={<MyClassAttendance />} />
+          <Route path="my-class/results" element={<MyClassResults />} />
+          <Route path="my-class/notice" element={<ClassNotice />} />
         </Route>
       </Route>
 

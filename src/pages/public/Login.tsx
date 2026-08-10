@@ -27,7 +27,8 @@ export default function Login() {
           role: result.user.role,
           name: result.user.name,
           userId: result.user.id,
-          studentProfile: result.user.studentProfile || null,
+          studentProfile: result.user.studentProfile,
+          teacherProfile: result.user.teacherProfile,
           token: result.token,
         })
       );
@@ -35,9 +36,7 @@ export default function Login() {
       navigate(`/${result.user.role}`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
-      const message = err?.data?.message || "Login failed. Please try again.";
-      setError(message);
-      toast.error(message);
+      setError(err?.data?.message || "Login failed. Please try again.");
     }
   };
 

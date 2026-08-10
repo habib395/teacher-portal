@@ -13,7 +13,7 @@ export const apiSlice = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Teacher", "Student", "Attendance", "Marks", "Assignment", "Presentation", "StudyMaterial", "Course","Notice", "Leave"],
+  tagTypes: ["Teacher", "Student", "Attendance", "Marks", "Assignment", "Presentation", "StudyMaterial", "Course","Notice", "Leave", "ClassGroup"],
   refetchOnMountOrArgChange: true,
   refetchOnFocus: true,
   endpoints: () => ({}),

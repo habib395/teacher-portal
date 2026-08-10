@@ -6,7 +6,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: UserRole;
+  role: "admin" | "teacher" | "student";
+  studentProfile?: string;
+  teacherProfile?: string; 
 }
 
 export interface ClassInfo {
@@ -16,21 +18,29 @@ export interface ClassInfo {
   teacherId: string;
 }
 
+export interface TeachingAssignment {
+  classGroupId: string;
+  subject: string;
+}
+
 export interface Teacher {
   _id: string;
   name: string;
   email: string;
   subject: string;
   phone: string;
+  classTeacherOf?: string;
+  teachingAssignments: TeachingAssignment[];
 }
+
 
 export interface Student {
   _id: string;
   name: string;
   email: string;
-  classId?: string;
   className: string;
   rollNumber: string;
+  classGroupId?: string;
 }
 
 
@@ -124,4 +134,19 @@ export interface Leave {
   toDate: string;
   attachmentUrl?: string;
   status: LeaveStatus;
+}
+
+export interface ClassGroup {
+  _id: string;
+  programName: string;
+  yearName: string;
+}
+
+export interface Notice {
+  _id: string;
+  title: string;
+  message: string;
+  postedBy: string;
+  targetClassGroupId?: string;
+  createdAt: string;
 }

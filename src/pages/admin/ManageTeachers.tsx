@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -17,20 +18,28 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Teacher } from "@/types";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { Teacher, TeachingAssignment } from "@/types";
 import {
   useGetTeachersQuery,
   useCreateTeacherMutation,
   useUpdateTeacherMutation,
   useDeleteTeacherMutation,
 } from "@/features/teacher/teacherApi";
-import { UserPlus, Edit3, Trash2, Mail, Phone, BookOpen, Sparkles, AlertCircle, Users } from "lucide-react";
-import { toast } from "sonner";
+import { useGetClassGroupsQuery } from "@/features/classGroup/classGroupApi";
+import { UserPlus, Edit, Trash2, Plus, X, BookOpen, UserCheck } from "lucide-react";
 
 export default function ManageTeachers() {
-  const { data: teachers, isLoading, isError } = useGetTeachersQuery();
-  const [createTeacher, { isLoading: isCreating }] = useCreateTeacherMutation();
-  const [updateTeacher, { isLoading: isUpdating }] = useUpdateTeacherMutation();
+  const { data: teachers, isLoading } = useGetTeachersQuery();
+  const { data: classGroups } = useGetClassGroupsQuery();
+  const [createTeacher] = useCreateTeacherMutation();
+  const [updateTeacher] = useUpdateTeacherMutation();
   const [deleteTeacher] = useDeleteTeacherMutation();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -40,6 +49,14 @@ export default function ManageTeachers() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [phone, setPhone] = useState("");
+  const [classTeacherOf, setClassTeacherOf] = useState<string>("none");
+  const [assignments, setAssignments] = useState<TeachingAssignment[]>([]);
+
+  const getClassGroupLabel = (id: string) => {
+    if (!classGroups) return "Loading...";
+    const cg = classGroups.find((c) => c._id === id);
+    return cg ? `${cg.programName} — ${cg.yearName}` : "Unknown";
+  };
 
   const openAddDialog = () => {
     setEditingTeacher(null);
@@ -47,6 +64,8 @@ export default function ManageTeachers() {
     setEmail("");
     setSubject("");
     setPhone("");
+    setClassTeacherOf("none");
+    setAssignments([]);
     setIsDialogOpen(true);
   };
 
@@ -56,31 +75,57 @@ export default function ManageTeachers() {
     setEmail(teacher.email);
     setSubject(teacher.subject);
     setPhone(teacher.phone);
+    setClassTeacherOf(teacher.classTeacherOf || "none");
+    setAssignments(teacher.teachingAssignments || []);
     setIsDialogOpen(true);
   };
 
+  const addAssignmentRow = () => {
+    setAssignments((prev) => [...prev, { classGroupId: "", subject: "" }]);
+  };
+
+  const updateAssignmentRow = (
+    index: number,
+    field: "classGroupId" | "subject",
+    value: string
+  ) => {
+    setAssignments((prev) =>
+      prev.map((a, i) => (i === index ? { ...a, [field]: value } : a))
+    );
+  };
+
+  const removeAssignmentRow = (index: number) => {
+    setAssignments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleDelete = async (id: string) => {
-    if (confirm("Are you sure you want to delete this teacher?")) {
-      try {
-        await deleteTeacher(id).unwrap();
-        toast.success("Teacher deleted successfully!");
-      } catch (err) {
-        console.error("Failed to delete teacher:", err);
-        toast.error("Failed to delete teacher.");
-      }
+    try {
+      await deleteTeacher(id).unwrap();
+      toast.success("Teacher deleted successfully!");
+    } catch (err) {
+      console.error("Failed to delete teacher:", err);
+      toast.error("Failed to delete teacher.");
     }
   };
 
   const handleSave = async () => {
+    const validAssignments = assignments.filter((a) => a.classGroupId && a.subject);
+
+    const payload = {
+      name,
+      email,
+      subject,
+      phone,
+      classTeacherOf: classTeacherOf === "none" ? undefined : classTeacherOf,
+      teachingAssignments: validAssignments,
+    };
+
     try {
       if (editingTeacher) {
-        await updateTeacher({
-          id: editingTeacher._id,
-          data: { name, email, subject, phone },
-        }).unwrap();
+        await updateTeacher({ id: editingTeacher._id, data: payload }).unwrap();
         toast.success("Teacher updated successfully!");
       } else {
-        await createTeacher({ name, email, subject, phone }).unwrap();
+        await createTeacher(payload).unwrap();
         toast.success("Teacher added successfully!");
       }
       setIsDialogOpen(false);
@@ -90,120 +135,92 @@ export default function ManageTeachers() {
     }
   };
 
-  const totalTeachers = teachers?.length || 0;
+  if (isLoading) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <p className="text-sm font-medium text-muted-foreground animate-pulse">Loading teachers directory...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-8 pb-10">
-      {/* Top Gradient Banner Header */}
-      <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 p-6 sm:p-8 rounded-3xl shadow-xl text-white flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl"></div>
-        <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-indigo-200 text-xs font-medium backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5" /> Faculty Administration
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Manage Teachers</h1>
-          <p className="text-sm text-slate-300 max-w-xl">
-            Add new faculty members, update academic contact details, and manage teaching assignments seamlessly.
+    <div className="max-w-7xl mx-auto px-4 py-8">
+      {/* পেজ হেডার */}
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Manage Teachers</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Add, edit, and organize faculty members, class roles, and subject assignments.
           </p>
         </div>
-        <Button 
-          onClick={openAddDialog}
-          className="bg-white hover:bg-slate-100 text-indigo-950 font-bold px-6 py-3 h-12 rounded-2xl shadow-lg transition-all flex items-center gap-2 shrink-0 z-10"
-        >
-          <UserPlus className="w-4 h-4 text-indigo-600" />
-          Add Teacher
+        <Button onClick={openAddDialog} className="gap-2 shadow-sm">
+          <UserPlus className="h-4 w-4" /> Add Teacher
         </Button>
       </div>
 
-      {/* Teachers Table Section */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden space-y-4">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-800">Faculty Members List</h2>
-          <span className="text-xs font-semibold px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full flex items-center gap-1.5">
-            <Users className="w-3.5 h-3.5" /> Total: {totalTeachers} Faculty
-          </span>
-        </div>
-
+      {/* টেবিল কার্ড */}
+      <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         <Table>
-          <TableHeader>
-            <TableRow className="bg-slate-50/70 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500">
-              <TableHead className="py-4 px-6">Teacher Name & Email</TableHead>
-              <TableHead className="py-4 px-6">Subject Expert</TableHead>
-              <TableHead className="py-4 px-6">Phone Contact</TableHead>
-              <TableHead className="py-4 px-6 text-right">Actions</TableHead>
+          <TableHeader className="bg-muted/50">
+            <TableRow>
+              <TableHead className="font-semibold">Name</TableHead>
+              <TableHead className="font-semibold">Email</TableHead>
+              <TableHead className="font-semibold">Class Teacher Of</TableHead>
+              <TableHead className="font-semibold">Subjects Taught</TableHead>
+              <TableHead className="text-right font-semibold">Actions</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className="divide-y divide-slate-100 text-sm">
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-16 text-slate-400">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="font-semibold text-slate-500">Loading teachers directory...</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : isError ? (
-              <TableRow>
-                <TableCell colSpan={4} className="text-center py-16 text-rose-500">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <AlertCircle className="w-8 h-8" />
-                    <p className="font-semibold">Failed to load teachers.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ) : teachers && teachers.length > 0 ? (
-              teachers.map((teacher) => (
-                <TableRow key={teacher._id} className="hover:bg-slate-50/60 transition-colors">
-                  <TableCell className="py-4 px-6 space-y-1">
-                    <div className="font-bold text-slate-800 flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 font-bold">
-                        {teacher.name.charAt(0)}
-                      </div>
-                      {teacher.name}
-                    </div>
-                    <div className="flex items-center gap-1 text-xs text-slate-400 ml-11">
-                      <Mail className="w-3 h-3" /> {teacher.email}
-                    </div>
-                  </TableCell>
-                  <TableCell className="py-4 px-6">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/60">
-                      <BookOpen className="w-3 h-3" /> {teacher.subject}
+          <TableBody>
+            {teachers?.map((teacher) => (
+              <TableRow key={teacher._id} className="hover:bg-muted/30 transition-colors">
+                <TableCell className="font-medium text-foreground">{teacher.name}</TableCell>
+                <TableCell className="text-muted-foreground">{teacher.email}</TableCell>
+                <TableCell>
+                  {teacher.classTeacherOf ? (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                      {getClassGroupLabel(teacher.classTeacherOf)}
                     </span>
-                  </TableCell>
-                  <TableCell className="py-4 px-6 text-xs font-semibold text-slate-600 font-mono">
-                    <div className="flex items-center gap-1.5">
-                      <Phone className="w-3.5 h-3.5 text-slate-400" />
-                      {teacher.phone}
+                  ) : (
+                    <span className="text-muted-foreground/60">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {teacher.teachingAssignments.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {teacher.teachingAssignments.map((a, i) => (
+                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-secondary text-secondary-foreground border border-border">
+                          {a.subject} ({getClassGroupLabel(a.classGroupId)})
+                        </span>
+                      ))}
                     </div>
-                  </TableCell>
-                  <TableCell className="py-4 px-6 text-right space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditDialog(teacher)}
-                      className="rounded-xl border-slate-200 text-slate-700 hover:bg-slate-100 h-9 px-3 font-semibold"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 mr-1 text-indigo-600" /> Edit
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(teacher._id)}
-                      className="rounded-xl bg-rose-50 text-rose-600 hover:bg-rose-100 border border-rose-200 h-9 px-3 font-semibold shadow-none"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 mr-1" /> Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
+                  ) : (
+                    <span className="text-muted-foreground/60">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-right space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 gap-1"
+                    onClick={() => openEditDialog(teacher)}
+                  >
+                    <Edit className="h-3.5 w-3.5" /> Edit
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="h-8 gap-1 bg-destructive/10 text-destructive hover:bg-destructive/20 border-transparent shadow-none"
+                    onClick={() => handleDelete(teacher._id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+            {teachers?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} className="text-center py-16 text-slate-400">
-                  <div className="flex flex-col items-center justify-center space-y-2">
-                    <AlertCircle className="w-8 h-8 text-slate-300" />
-                    <p className="font-semibold text-slate-500">No teachers found in the directory.</p>
-                  </div>
+                <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                  No teachers added yet. Click "+ Add Teacher" to get started.
                 </TableCell>
               </TableRow>
             )}
@@ -211,73 +228,177 @@ export default function ManageTeachers() {
         </Table>
       </div>
 
-      {/* Add / Edit Dialog Form */}
+      {/* মডার্ন ও প্রশস্ত পপআপ (Dialog) */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="sm:max-w-lg rounded-3xl p-6 sm:p-8 space-y-6">
-          <DialogHeader>
-            <DialogTitle className="text-xl font-bold text-slate-800">
-              {editingTeacher ? "Edit Teacher Information" : "Add New Teacher"}
+        <DialogContent className="sm:max-w-2xl lg:max-w-4xl w-full max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl shadow-2xl border">
+          
+          {/* পপআপ হেডার */}
+          <DialogHeader className="px-6 py-4 border-b bg-muted/40">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+              {editingTeacher ? <Edit className="h-5 w-5 text-primary" /> : <UserPlus className="h-5 w-5 text-primary" />}
+              {editingTeacher ? "Edit Teacher Information" : "Register New Teacher"}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-slate-500">Full Name</Label>
-              <Input 
-                id="name" 
-                placeholder="e.g., Dr. John Doe" 
-                value={name} 
-                onChange={(e) => setName(e.target.value)} 
-                className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700 outline-none"
-              />
+          {/* পপআপ বডি */}
+          <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+            
+            {/* ১. Basic Info */}
+            <div className="rounded-xl border bg-card p-5 shadow-2xs space-y-4">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 border-b pb-2">
+                <span className="h-2 w-2 rounded-full bg-primary"></span>
+                Basic Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="name">Full Name <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="e.g. Dr. Sujon Ahmed"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email">Email Address <span className="text-destructive">*</span></Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="e.g. sujon@example.com"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="subject">Main Specialization / Subject</Label>
+                  <Input
+                    id="subject"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g. Anatomy & Physiology"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="phone">Phone Number</Label>
+                  <Input
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="e.g. 01700000000"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-500">Email Address</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="e.g., john.doe@university.edu"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700 outline-none"
-              />
+
+            {/* ২. Class Teacher Role */}
+            <div className="rounded-xl border bg-card p-5 shadow-2xs space-y-3">
+              <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 border-b pb-2">
+                <UserCheck className="h-4 w-4 text-primary" />
+                Administrative Role
+              </h3>
+              <div className="space-y-1.5">
+                <Label>Assigned Class Teacher Role (Optional)</Label>
+                {classGroups ? (
+                  <Select value={classTeacherOf} onValueChange={setClassTeacherOf}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select class group" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Not a Class Teacher</SelectItem>
+                      {classGroups.map((cg) => (
+                        <SelectItem key={cg._id} value={cg._id}>
+                          {cg.programName} — {cg.yearName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Loading available classes...</p>
+                )}
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="subject" className="text-xs font-bold uppercase tracking-wider text-slate-500">Subject / Specialization</Label>
-              <Input
-                id="subject"
-                placeholder="e.g., Web Engineering"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700 outline-none"
-              />
+
+            {/* ৩. Teaching Assignments */}
+            <div className="rounded-xl border bg-card p-5 shadow-2xs space-y-4">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-primary" />
+                  Subject Teaching Assignments
+                </h3>
+                <Button variant="outline" size="sm" onClick={addAssignmentRow} className="h-8 gap-1 text-xs">
+                  <Plus className="h-3.5 w-3.5" /> Add Subject
+                </Button>
+              </div>
+
+              <div className="space-y-3">
+                {assignments.map((assignment, index) => (
+                  <div
+                    key={index}
+                    className="flex flex-col sm:flex-row items-center gap-3 rounded-lg border bg-muted/20 p-3"
+                  >
+                    <span className="hidden sm:inline-flex text-xs font-semibold text-muted-foreground w-4 text-center">
+                      {index + 1}
+                    </span>
+
+                    {classGroups ? (
+                      <Select
+                        value={assignment.classGroupId}
+                        onValueChange={(v) =>
+                          updateAssignmentRow(index, "classGroupId", v)
+                        }
+                      >
+                        <SelectTrigger className="w-full sm:w-[240px] bg-background">
+                          <SelectValue placeholder="Select Class / Program" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {classGroups.map((cg) => (
+                            <SelectItem key={cg._id} value={cg._id}>
+                              {cg.programName} — {cg.yearName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="flex-1 text-xs text-muted-foreground">Loading classes...</div>
+                    )}
+
+                    <Input
+                      placeholder="Subject Name (e.g. Pharmacology)"
+                      value={assignment.subject}
+                      onChange={(e) =>
+                        updateAssignmentRow(index, "subject", e.target.value)
+                      }
+                      className="w-full flex-1 bg-background"
+                    />
+
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full sm:w-auto h-9 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => removeAssignmentRow(index)}
+                    >
+                      <X className="h-4 w-4 sm:mr-0 mr-1" /> <span className="sm:hidden">Remove</span>
+                    </Button>
+                  </div>
+                ))}
+
+                {assignments.length === 0 && (
+                  <div className="rounded-lg border border-dashed p-6 text-center">
+                    <p className="text-sm text-muted-foreground">No extra subjects assigned yet.</p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">Click "+ Add Subject" to assign classes and subjects.</p>
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-slate-500">Phone Number</Label>
-              <Input 
-                id="phone" 
-                placeholder="e.g., +8801700000000" 
-                value={phone} 
-                onChange={(e) => setPhone(e.target.value)} 
-                className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700 outline-none font-mono"
-              />
-            </div>
+
           </div>
 
-          <DialogFooter className="pt-2 gap-3">
-            <Button 
-              variant="outline" 
-              onClick={() => setIsDialogOpen(false)}
-              className="rounded-2xl border-slate-200 text-slate-600 font-bold h-12 px-6"
-            >
+          <DialogFooter className="px-6 py-4 border-t bg-muted/40 flex items-center justify-end gap-3">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleSave} 
-              disabled={isCreating || isUpdating}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-2xl h-12 px-8 shadow-lg shadow-indigo-600/20"
-            >
-              {isCreating || isUpdating ? "Saving..." : editingTeacher ? "Update Teacher" : "Add Teacher"}
+            <Button onClick={handleSave} className="px-6">
+              {editingTeacher ? "Save Changes" : "Create Teacher"}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -54,7 +54,12 @@ export default function AdminLayout() {
                         >
                             <GraduationCap className="w-4 h-4" /> Manage Students
                         </Link>
-
+                        <Link 
+                            to="/admin/classes" 
+                            className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200"
+                        >
+                            <GraduationCap className="w-4 h-4" /> Manage Classes
+                        </Link>
                         <Link 
                             to="/admin/courses" 
                             className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-semibold text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200"
