@@ -72,19 +72,22 @@ export interface AttendanceRecord {
     deadline: string;
     status: "pending" | "submitted";
   }
-  
+
   export interface Assignment {
     _id: string;
     title: string;
     subject: string;
     deadline: string;
     submittedBy: string[];
+    classGroupId: string;
+    createdByTeacherId: string;
   }
 
   export interface Presentation {
     _id: string;
     studentId: string;
     studentName: string;
+    classGroupId: string;
     topic: string;
     subject: string;
     date: string;

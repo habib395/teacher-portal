@@ -5,6 +5,7 @@ interface CreateAssignmentPayload {
   title: string;
   subject: string;
   deadline: string;
+  classGroupId: string;
 }
 
 export const assignmentApi = apiSlice.injectEndpoints({

@@ -1,6 +1,14 @@
 import { useMemo, useState } from "react";
+import { useSelector } from "react-redux";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -10,11 +18,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useGetStudentsQuery } from "@/features/student/studentApi";
+import { useGetTeachersQuery } from "@/features/teacher/teacherApi";
+import { useGetClassGroupsQuery } from "@/features/classGroup/classGroupApi";
 import {
-  useGetAttendanceByDateQuery,
+  useGetAttendanceByClassAndDateQuery,
   useSaveAttendanceMutation,
 } from "@/features/attendance/attendanceApi";
-import type { AttendanceRecord, AttendanceStatus } from "@/types";
+import type { AttendanceStatus } from "@/types";
+import type { RootState } from "@/app/store";
 import { Calendar, Search, CheckCircle2, XCircle, Users, Save, Sparkles, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -23,30 +34,56 @@ function getTodayDate() {
 }
 
 export default function Attendance() {
+  const teacherProfileId = useSelector((state: RootState) => state.auth.teacherProfile);
+
   const [selectedDate, setSelectedDate] = useState(getTodayDate());
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [manualOverrides, setManualOverrides] = useState<Record<string, AttendanceStatus>>({});
-  // const [showNotification, setShowNotification] = useState(false);
 
   const { data: students, isLoading: studentsLoading } = useGetStudentsQuery();
-  const { data: existingAttendance } = useGetAttendanceByDateQuery(selectedDate);
+  const { data: teachers } = useGetTeachersQuery();
+  const { data: classGroups } = useGetClassGroupsQuery();
+
+  // শিক্ষকের ক্লাস এবং ক্লাসের স্টুডেন্ট ফিল্টার করার লজিক
+  const myTeacherRecord = teachers?.find((t) => t._id === teacherProfileId);
+  
+  const myClassIds = new Set<string>();
+  if (myTeacherRecord?.classTeacherOf) myClassIds.add(myTeacherRecord.classTeacherOf);
+  myTeacherRecord?.teachingAssignments.forEach((a) => myClassIds.add(a.classGroupId));
+
+  const myClasses = classGroups?.filter((cg) => myClassIds.has(cg._id)) ?? [];
+
+  // যদি শিক্ষক প্রথমবার আসেন এবং ক্লাস সিলেক্ট করা না থাকে, তবে প্রথম ক্লাসটি অটো সিলেক্ট করে দেওয়া
+  const activeClassId = selectedClassId || (myClasses.length > 0 ? myClasses[0]._id : "");
+
+  const { data: existingAttendance } = useGetAttendanceByClassAndDateQuery(
+    { classGroupId: activeClassId, date: selectedDate },
+    { skip: !activeClassId }
+  );
+
   const [saveAttendance, { isLoading: isSaving }] = useSaveAttendanceMutation();
 
-  const records: AttendanceRecord[] = useMemo(() => {
+  // বর্তমান সিলেক্টেড ক্লাসের স্টুডেন্টদের ফিল্টার করা
+  const classStudents = useMemo(() => {
     if (!students) return [];
+    return students.filter((s) => s.classGroupId === activeClassId);
+  }, [students, activeClassId]);
 
-    return students.map((student) => {
-      const existing = existingAttendance?.find(
-        (record) => record.studentId === student._id
+  const records = useMemo(() => {
+    return classStudents.map((student) => {
+      const existingRecord = existingAttendance?.records?.find(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (r: any) => r.studentId === student._id
       );
       return {
         studentId: student._id,
         studentName: student.name,
         rollNumber: student.rollNumber,
-        status: manualOverrides[student._id] || existing?.status || "present",
+        status: manualOverrides[student._id] || existingRecord?.status || "present",
       };
     });
-  }, [students, existingAttendance, manualOverrides]);
+  }, [classStudents, existingAttendance, manualOverrides]);
 
   const filteredRecords = useMemo(() => {
     return records.filter(
@@ -74,8 +111,23 @@ export default function Attendance() {
   };
 
   const handleSaveAttendance = async () => {
+    if (!activeClassId) {
+      toast.error("Please select a class first.");
+      return;
+    }
+
     try {
-      await saveAttendance({ date: selectedDate, records }).unwrap();
+      const payloadRecords = records.map((r) => ({
+        studentId: r.studentId,
+        status: r.status,
+      }));
+
+      await saveAttendance({
+        classGroupId: activeClassId,
+        date: selectedDate,
+        records: payloadRecords,
+      }).unwrap();
+
       toast.success("Attendance saved successfully!");
       setManualOverrides({});
     } catch (err) {
@@ -109,6 +161,22 @@ export default function Attendance() {
         </div>
 
         <div className="relative z-15 flex items-center gap-3 flex-wrap">
+          {/* যদি শিক্ষকের একাধিক ক্লাস থাকে তবে ড্রপডাউন দেখাবে */}
+          {myClasses.length > 1 && (
+            <Select value={activeClassId} onValueChange={setSelectedClassId}>
+              <SelectTrigger className="bg-white/10 border border-white/20 text-white text-sm font-semibold rounded-2xl h-10 px-4 w-48">
+                <SelectValue placeholder="Select Class" />
+              </SelectTrigger>
+              <SelectContent>
+                {myClasses.map((cg) => (
+                  <SelectItem key={cg._id} value={cg._id}>
+                    {cg.programName} — {cg.yearName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
           <div className="flex items-center gap-2 bg-white/10 border border-white/20 px-4 py-2 rounded-2xl backdrop-blur-md shadow-inner">
             <Calendar className="w-4 h-4 text-indigo-300" />
             <Input
@@ -131,14 +199,6 @@ export default function Attendance() {
           </Button>
         </div>
       </div>
-
-      {/* Success Notification Alert */}
-      {/* {showNotification && (
-        <div className="flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl shadow-sm text-sm font-semibold animate-fadeIn">
-          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-          Attendance successfully recorded and saved for {selectedDate}!
-        </div>
-      )} */}
 
       {/* Modern Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -288,7 +348,7 @@ export default function Attendance() {
                 <TableCell colSpan={4} className="text-center py-16 text-slate-400">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <AlertCircle className="w-8 h-8 text-slate-300" />
-                    <p className="font-semibold text-slate-500">No students found matching your search query.</p>
+                    <p className="font-semibold text-slate-500">No students found for your assigned class.</p>
                   </div>
                 </TableCell>
               </TableRow>

@@ -1,9 +1,25 @@
 import { apiSlice } from "@/features/api/apiSlice";
-import type { AttendanceRecord } from "@/types";
+import type { AttendanceStatus } from "@/types";
+
+export interface IAttendanceRecordPayload {
+  studentId: string;
+  status: AttendanceStatus;
+}
 
 interface SaveAttendancePayload {
+  classGroupId: string;
   date: string;
-  records: AttendanceRecord[];
+  records: IAttendanceRecordPayload[];
+}
+
+interface AttendanceResponse {
+  classGroupId: string;
+  date: string;
+  records: {
+    studentId: string;
+    status: AttendanceStatus;
+    _id?: string;
+  }[];
 }
 
 interface AttendanceSummary {
@@ -15,15 +31,15 @@ interface AttendanceSummary {
 
 export const attendanceApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    getAttendanceByDate: builder.query<AttendanceRecord[], string>({
-      query: (date) => `/attendance?date=${date}`,
+    getAttendanceByClassAndDate: builder.query<AttendanceResponse, { classGroupId: string; date: string }>({
+      query: ({ classGroupId, date }) => `/attendance?classGroupId=${classGroupId}&date=${date}`,
       providesTags: ["Attendance"],
     }),
     getAttendanceSummary: builder.query<AttendanceSummary, string>({
       query: (studentId) => `/attendance/summary?studentId=${studentId}`,
       providesTags: ["Attendance"],
     }),
-    saveAttendance: builder.mutation<{ message: string }, SaveAttendancePayload>({
+    saveAttendance: builder.mutation<{ message: string; attendance: AttendanceResponse }, SaveAttendancePayload>({
       query: (payload) => ({
         url: "/attendance",
         method: "POST",
@@ -35,7 +51,7 @@ export const attendanceApi = apiSlice.injectEndpoints({
 });
 
 export const {
-  useGetAttendanceByDateQuery,
+  useGetAttendanceByClassAndDateQuery,
   useGetAttendanceSummaryQuery,
   useSaveAttendanceMutation,
 } = attendanceApi;

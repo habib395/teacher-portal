@@ -1,13 +1,19 @@
 import { apiSlice } from "@/features/api/apiSlice";
 import type { Teacher } from "@/types";
 
+export interface CreateTeacherResponse extends Teacher {
+  defaultPassword?: string;
+}
+
 export const teacherApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getTeachers: builder.query<Teacher[], void>({
       query: () => "/teachers",
       providesTags: ["Teacher"],
     }),
-    createTeacher: builder.mutation<Teacher, Partial<Teacher>>({
+    
+    // createTeacher endpoint এ:
+    createTeacher: builder.mutation<CreateTeacherResponse, Partial<Teacher>>({
       query: (newTeacher) => ({
         url: "/teachers",
         method: "POST",

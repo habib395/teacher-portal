@@ -51,12 +51,6 @@ export default function ManageStudents() {
   const { data: classGroups } = useGetClassGroupsQuery();
 const [classGroupId, setClassGroupId] = useState<string>("none");
 
-// const getClassGroupLabel = (id?: string) => {
-//   if (!id || !classGroups) return "—";
-//   const cg = classGroups.find((c) => c._id === id);
-//   return cg ? `${cg.programName} — ${cg.yearName}` : "Unknown";
-// };
-
 const openAddDialog = () => {
   setEditingStudent(null);
   setName("");
@@ -101,13 +95,18 @@ const openEditDialog = (student: Student) => {
         await updateStudent({ id: editingStudent._id, data: payload }).unwrap();
         toast.success("Student updated successfully!");
       } else {
-        await createStudent(payload).unwrap();
-        toast.success("Student added successfully!");
+        const result = await createStudent(payload).unwrap();
+        toast.success(
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          `Student added! Login email: ${email}, Default password: ${(result as any).defaultPassword}`,
+          { duration: 10000 }
+        );
       }
       setIsDialogOpen(false);
-    } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
       console.error("Failed to save student:", err);
-      toast.error("Failed to save student.");
+      toast.error(err?.data?.message || "Failed to save student.");
     }
   };
 
@@ -283,13 +282,14 @@ const openEditDialog = (student: Student) => {
                 className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700 outline-none font-mono"
               />
               <div>
-  <Label htmlFor="classGroup">Class (Batch)</Label>
+              <Label htmlFor="classGroup">Class (Batch)</Label>
   {classGroups ? (
     <Select value={classGroupId} onValueChange={setClassGroupId}>
-      <SelectTrigger id="classGroup">
+      <SelectTrigger id="classGroup" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700">
         <SelectValue placeholder="Select class" />
       </SelectTrigger>
-      <SelectContent>
+      {/* এখানে w-[--radix-select-trigger-width] এবং min-w-[--radix-select-trigger-width] ক্লাসগুলো যোগ করা হয়েছে */}
+      <SelectContent className="w-[--radix-select-trigger-width] min-w-[--radix-select-trigger-width] rounded-2xl">
         <SelectItem value="none">Not Assigned</SelectItem>
         {classGroups.map((cg) => (
           <SelectItem key={cg._id} value={cg._id}>

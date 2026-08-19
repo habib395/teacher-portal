@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -75,7 +76,8 @@ export default function ManageTeachers() {
     setEmail(teacher.email);
     setSubject(teacher.subject);
     setPhone(teacher.phone);
-    setClassTeacherOf(teacher.classTeacherOf || "none");
+    // Safe check: যদি classTeacherOf না থাকে তবে "none" সেট হবে
+    setClassTeacherOf(teacher.classTeacherOf ? teacher.classTeacherOf : "none");
     setAssignments(teacher.teachingAssignments || []);
     setIsDialogOpen(true);
   };
@@ -110,7 +112,7 @@ export default function ManageTeachers() {
 
   const handleSave = async () => {
     const validAssignments = assignments.filter((a) => a.classGroupId && a.subject);
-
+  
     const payload = {
       name,
       email,
@@ -119,18 +121,20 @@ export default function ManageTeachers() {
       classTeacherOf: classTeacherOf === "none" ? undefined : classTeacherOf,
       teachingAssignments: validAssignments,
     };
-
+  
     try {
       if (editingTeacher) {
         await updateTeacher({ id: editingTeacher._id, data: payload }).unwrap();
         toast.success("Teacher updated successfully!");
       } else {
-        await createTeacher(payload).unwrap();
-        toast.success("Teacher added successfully!");
+        const result = await createTeacher(payload).unwrap();
+        toast.success(
+          `Teacher added! Login email: ${email}, Default password: ${result.defaultPassword}`,
+          { duration: 10000 }
+        );
       }
       setIsDialogOpen(false);
     } catch (err) {
-      console.error("Failed to save teacher:", err);
       toast.error("Failed to save teacher.");
     }
   };
@@ -145,7 +149,6 @@ export default function ManageTeachers() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      {/* পেজ হেডার */}
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Manage Teachers</h1>
@@ -158,7 +161,6 @@ export default function ManageTeachers() {
         </Button>
       </div>
 
-      {/* টেবিল কার্ড */}
       <div className="rounded-xl border bg-card shadow-sm overflow-hidden">
         <Table>
           <TableHeader className="bg-muted/50">
@@ -185,7 +187,7 @@ export default function ManageTeachers() {
                   )}
                 </TableCell>
                 <TableCell>
-                  {teacher.teachingAssignments.length > 0 ? (
+                  {teacher.teachingAssignments?.length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {teacher.teachingAssignments.map((a, i) => (
                         <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-secondary text-secondary-foreground border border-border">
@@ -228,11 +230,9 @@ export default function ManageTeachers() {
         </Table>
       </div>
 
-      {/* মডার্ন ও প্রশস্ত পপআপ (Dialog) */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-2xl lg:max-w-4xl w-full max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-2xl shadow-2xl border">
           
-          {/* পপআপ হেডার */}
           <DialogHeader className="px-6 py-4 border-b bg-muted/40">
             <DialogTitle className="text-xl font-bold flex items-center gap-2">
               {editingTeacher ? <Edit className="h-5 w-5 text-primary" /> : <UserPlus className="h-5 w-5 text-primary" />}
@@ -240,7 +240,6 @@ export default function ManageTeachers() {
             </DialogTitle>
           </DialogHeader>
 
-          {/* পপআপ বডি */}
           <div className="flex-1 overflow-y-auto px-6 py-6 space-y-6">
             
             {/* ১. Basic Info */}
@@ -342,7 +341,8 @@ export default function ManageTeachers() {
 
                     {classGroups ? (
                       <Select
-                        value={assignment.classGroupId}
+                        // যদি assignment.classGroupId খালি থাকে তবে undefined দিন যাতে Select ক্র্যাশ না করে
+                        value={assignment.classGroupId || undefined}
                         onValueChange={(v) =>
                           updateAssignmentRow(index, "classGroupId", v)
                         }
