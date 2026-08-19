@@ -42,7 +42,7 @@ export default function TeacherDashboard() {
 
   const myClassStudents =
     students?.filter((s) => s.classGroupId === myTeacherRecord?.classTeacherOf) ?? [];
-
+    // console.log(myClassStudents)
   const myTeachingStudents =
     students?.filter((s) => s.classGroupId && myClassIds.has(s.classGroupId)) ?? [];
 
@@ -201,14 +201,17 @@ export default function TeacherDashboard() {
                     <TableHead>Roll</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  
                   {myClassStudents.map((student) => (
                     <TableRow key={student._id}>
                       <TableCell>{student.rollNumber}</TableCell>
                       <TableCell>{student.name}</TableCell>
                       <TableCell>{student.email}</TableCell>
+                      {/* <TableCell>{student.phone}</TableCell> */}
                     </TableRow>
                   ))}
                   {myClassStudents.length === 0 && (

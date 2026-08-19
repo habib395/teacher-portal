@@ -26,7 +26,7 @@ import {
 } from "@/features/attendance/attendanceApi";
 import type { AttendanceStatus } from "@/types";
 import type { RootState } from "@/app/store";
-import { Calendar, Search, CheckCircle2, XCircle, Users, Save, Sparkles, AlertCircle } from "lucide-react";
+import { Calendar, Search, CheckCircle2, XCircle, Users, Save, Sparkles, AlertCircle, ShieldAlert, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 function getTodayDate() {
@@ -40,22 +40,32 @@ export default function Attendance() {
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [manualOverrides, setManualOverrides] = useState<Record<string, AttendanceStatus>>({});
+  
+  // নতুন স্টেট: স্ট্যাটাস অনুযায়ী ফিল্টার করার জন্য ("all" | "present" | "absent")
+  const [filterStatus, setFilterStatus] = useState<"all" | "present" | "absent">("all");
 
   const { data: students, isLoading: studentsLoading } = useGetStudentsQuery();
   const { data: teachers } = useGetTeachersQuery();
   const { data: classGroups } = useGetClassGroupsQuery();
 
-  // শিক্ষকের ক্লাস এবং ক্লাসের স্টুডেন্ট ফিল্টার করার লজিক
   const myTeacherRecord = teachers?.find((t) => t._id === teacherProfileId);
   
-  const myClassIds = new Set<string>();
-  if (myTeacherRecord?.classTeacherOf) myClassIds.add(myTeacherRecord.classTeacherOf);
-  myTeacherRecord?.teachingAssignments.forEach((a) => myClassIds.add(a.classGroupId));
+  const myClassIds = useMemo(() => {
+    const ids = new Set<string>();
+    if (myTeacherRecord?.classTeacherOf) {
+      ids.add(myTeacherRecord.classTeacherOf);
+    }
+    return ids;
+  }, [myTeacherRecord]);
 
-  const myClasses = classGroups?.filter((cg) => myClassIds.has(cg._id)) ?? [];
+  const myClasses = useMemo(() => {
+    if (!classGroups) return [];
+    return classGroups.filter((cg) => myClassIds.has(cg._id));
+  }, [classGroups, myClassIds]);
 
-  // যদি শিক্ষক প্রথমবার আসেন এবং ক্লাস সিলেক্ট করা না থাকে, তবে প্রথম ক্লাসটি অটো সিলেক্ট করে দেওয়া
-  const activeClassId = selectedClassId || (myClasses.length > 0 ? myClasses[0]._id : "");
+  const defaultClassId = myClasses.length > 0 ? myClasses[0]._id : "";
+  const candidateClassId = selectedClassId || defaultClassId;
+  const activeClassId = myClassIds.has(candidateClassId) ? candidateClassId : defaultClassId;
 
   const { data: existingAttendance } = useGetAttendanceByClassAndDateQuery(
     { classGroupId: activeClassId, date: selectedDate },
@@ -64,9 +74,8 @@ export default function Attendance() {
 
   const [saveAttendance, { isLoading: isSaving }] = useSaveAttendanceMutation();
 
-  // বর্তমান সিলেক্টেড ক্লাসের স্টুডেন্টদের ফিল্টার করা
   const classStudents = useMemo(() => {
-    if (!students) return [];
+    if (!students || !activeClassId) return [];
     return students.filter((s) => s.classGroupId === activeClassId);
   }, [students, activeClassId]);
 
@@ -85,13 +94,18 @@ export default function Attendance() {
     });
   }, [classStudents, existingAttendance, manualOverrides]);
 
+  // ফিল্টারিং লজিক: সার্চ কুয়েরি এবং কার্ড ক্লিক ফিল্টার একত্রে কাজ করবে
   const filteredRecords = useMemo(() => {
-    return records.filter(
-      (r) =>
+    return records.filter((r) => {
+      const matchesSearch =
         r.studentName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        String(r.rollNumber).includes(searchQuery)
-    );
-  }, [records, searchQuery]);
+        String(r.rollNumber).includes(searchQuery);
+      
+      const matchesStatus = filterStatus === "all" ? true : r.status === filterStatus;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [records, searchQuery, filterStatus]);
 
   const totalCount = records.length;
   const presentCount = records.filter((r) => r.status === "present").length;
@@ -112,7 +126,7 @@ export default function Attendance() {
 
   const handleSaveAttendance = async () => {
     if (!activeClassId) {
-      toast.error("Please select a class first.");
+      toast.error("You are not assigned to any valid class.");
       return;
     }
 
@@ -128,11 +142,13 @@ export default function Attendance() {
         records: payloadRecords,
       }).unwrap();
 
-      toast.success("Attendance saved successfully!");
+      const isUpdate = existingAttendance && existingAttendance.records && existingAttendance.records.length > 0;
+      toast.success(isUpdate ? "Attendance records updated successfully!" : "Attendance saved successfully!");
       setManualOverrides({});
-    } catch (err) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
       console.error("Failed to save attendance:", err);
-      toast.error("Failed to save attendance.");
+      toast.error(err?.data?.message || "Failed to save attendance.");
     }
   };
 
@@ -145,29 +161,42 @@ export default function Attendance() {
     );
   }
 
+  if (myClasses.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[450px] space-y-4 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm text-center">
+        <ShieldAlert className="w-12 h-12 text-rose-500" />
+        <h2 className="text-xl font-bold text-slate-800">No Class Assigned</h2>
+        <p className="text-sm text-slate-500 max-w-md">
+          You are currently not assigned as a class teacher for any batch. Please contact the administrator.
+        </p>
+      </div>
+    );
+  }
+
+  const hasExistingData = existingAttendance && existingAttendance.records && existingAttendance.records.length > 0;
+
   return (
     <div className="space-y-8 pb-10">
-      {/* Top Header Section with Gradient Banner Feel */}
+      {/* Top Header Section */}
       <div className="bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 p-6 sm:p-8 rounded-3xl shadow-xl text-white flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
         <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl"></div>
         <div className="relative z-10 space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-indigo-200 text-xs font-medium backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5" /> Real-time Tracker
+            <Sparkles className="w-3.5 h-3.5" /> Class Teacher Portal
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Student Attendance Portal</h1>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">Class Attendance Manager</h1>
           <p className="text-sm text-slate-300 max-w-xl">
-            Effortlessly monitor, update, and manage classroom presence with dynamic batch control.
+            Manage and modify student presence seamlessly for your assigned class.
           </p>
         </div>
 
         <div className="relative z-15 flex items-center gap-3 flex-wrap">
-          {/* যদি শিক্ষকের একাধিক ক্লাস থাকে তবে ড্রপডাউন দেখাবে */}
           {myClasses.length > 1 && (
             <Select value={activeClassId} onValueChange={setSelectedClassId}>
-              <SelectTrigger className="bg-white/10 border border-white/20 text-white text-sm font-semibold rounded-2xl h-10 px-4 w-48">
-                <SelectValue placeholder="Select Class" />
+              <SelectTrigger className="bg-white/10 border border-white/20 text-white text-sm font-semibold rounded-2xl h-10 px-4 w-52">
+                <SelectValue placeholder="Select Your Class" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="w-[--radix-select-trigger-width] min-w-[--radix-select-trigger-width] rounded-2xl">
                 {myClasses.map((cg) => (
                   <SelectItem key={cg._id} value={cg._id}>
                     {cg.programName} — {cg.yearName}
@@ -195,24 +224,43 @@ export default function Attendance() {
             className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold px-5 py-2.5 rounded-2xl shadow-lg shadow-emerald-900/30 transition-all flex items-center gap-2"
           >
             <Save className="w-4 h-4" />
-            {isSaving ? "Saving..." : "Save Records"}
+            {isSaving ? "Saving..." : hasExistingData ? "Update Records" : "Save Records"}
           </Button>
         </div>
       </div>
 
-      {/* Modern Stats Cards */}
+      {hasExistingData && (
+        <div className="bg-amber-50 border border-amber-200/80 p-4 rounded-2xl flex items-center gap-3 text-amber-800 text-sm font-semibold">
+          <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+          <span>Attendance for this date has already been submitted. You can modify any student's status and click "Update Records" to save changes.</span>
+        </div>
+      )}
+
+      {/* Modern Stats Cards (ক্লিক করলে ফিল্টার হবে) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
+        {/* Total Enrolled Card (ক্লিক করলে সব দেখাবে) */}
+        <div 
+          onClick={() => setFilterStatus("all")}
+          className={`bg-white p-5 rounded-3xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
+            filterStatus === "all" ? "border-indigo-500 ring-2 ring-indigo-500/20 bg-indigo-50/10" : "border-slate-100 hover:border-slate-300"
+          }`}
+        >
           <div className="space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Total Enrolled</p>
             <h3 className="text-3xl font-black text-slate-800">{totalCount}</h3>
           </div>
-          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
             <Users className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
+        {/* Present Today Card (ক্লিক করলে শুধু প্রেজেন্ট দেখাবে) */}
+        <div 
+          onClick={() => setFilterStatus("present")}
+          className={`bg-white p-5 rounded-3xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
+            filterStatus === "present" ? "border-emerald-500 ring-2 ring-emerald-500/20 bg-emerald-50/10" : "border-slate-100 hover:border-slate-300"
+          }`}
+        >
           <div className="space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Present Today</p>
             <div className="flex items-baseline gap-2">
@@ -220,17 +268,23 @@ export default function Attendance() {
               <span className="text-xs font-semibold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-full">{attendancePercentage}%</span>
             </div>
           </div>
-          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
             <CheckCircle2 className="w-6 h-6" />
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm hover:shadow-md transition-all flex items-center justify-between group">
+        {/* Absent Today Card (ক্লিক করলে শুধু এবসেন্ট দেখাবে) */}
+        <div 
+          onClick={() => setFilterStatus("absent")}
+          className={`bg-white p-5 rounded-3xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
+            filterStatus === "absent" ? "border-rose-500 ring-2 ring-rose-500/20 bg-rose-50/10" : "border-slate-100 hover:border-slate-300"
+          }`}
+        >
           <div className="space-y-1">
             <p className="text-xs font-bold uppercase tracking-wider text-slate-400">Absent Today</p>
             <h3 className="text-3xl font-black text-rose-600">{absentCount}</h3>
           </div>
-          <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+          <div className="w-14 h-14 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center">
             <XCircle className="w-6 h-6" />
           </div>
         </div>
@@ -261,7 +315,7 @@ export default function Attendance() {
 
       {/* Filter & Search Bar */}
       <div className="flex items-center justify-between gap-4 flex-wrap bg-white p-4 rounded-3xl border border-slate-100 shadow-sm">
-        <div className="flex items-center gap-3 bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200/80 w-full sm:max-w-md focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
+        <div className="flex items-center gap-3 bg-slate-50 px-4 py-2.5 rounded-2xl border border-slate-200/80 w-full sm:max-w-md">
           <Search className="w-4 h-4 text-slate-400 shrink-0" />
           <input 
             type="text" 
@@ -271,12 +325,27 @@ export default function Attendance() {
             className="w-full text-sm outline-none bg-transparent text-slate-700 placeholder:text-slate-400 font-medium"
           />
         </div>
-        <div className="text-xs font-semibold text-slate-500 px-2">
-          Showing <span className="text-slate-800 font-bold">{filteredRecords.length}</span> of {totalCount} students
+        
+        <div className="flex items-center gap-3">
+          {/* যদি ফিল্টার একটিভ থাকে তবে রিসেট করার বাটন দেখাবে */}
+          {filterStatus !== "all" && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setFilterStatus("all")}
+              className="text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded-xl h-9"
+            >
+              Clear Filter ({filterStatus})
+            </Button>
+          )}
+          <div className="text-xs font-semibold text-slate-500 px-2 flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-slate-400" />
+            Showing <span className="text-slate-800 font-bold">{filteredRecords.length}</span> of {totalCount} students
+          </div>
         </div>
       </div>
 
-      {/* Modern Clean Table Section */}
+      {/* Table Section */}
       <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
@@ -348,7 +417,7 @@ export default function Attendance() {
                 <TableCell colSpan={4} className="text-center py-16 text-slate-400">
                   <div className="flex flex-col items-center justify-center space-y-2">
                     <AlertCircle className="w-8 h-8 text-slate-300" />
-                    <p className="font-semibold text-slate-500">No students found for your assigned class.</p>
+                    <p className="font-semibold text-slate-500">No students match this filter.</p>
                   </div>
                 </TableCell>
               </TableRow>
