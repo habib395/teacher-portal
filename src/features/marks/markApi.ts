@@ -11,6 +11,10 @@ export const marksApi = apiSlice.injectEndpoints({
       query: (studentId) => `/marks?studentId=${studentId}`,
       providesTags: ["Marks"],
     }),
+    getMarksBySubject: builder.query<MarksRecord[], string>({
+      query: (subject) => `/marks/by-subject?subject=${encodeURIComponent(subject)}`,
+      providesTags: ["Marks"],
+    }),
     saveMarks: builder.mutation<{ message: string }, SaveMarksPayload>({
       query: (payload) => ({
         url: "/marks",
@@ -22,4 +26,4 @@ export const marksApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useGetMarksByStudentQuery, useSaveMarksMutation } = marksApi;
+export const { useGetMarksByStudentQuery, useSaveMarksMutation, useGetMarksBySubjectQuery } = marksApi;
