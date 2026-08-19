@@ -132,6 +132,7 @@ export interface Leave {
   _id: string;
   studentId: string;
   studentName: string;
+  classGroupId: string;
   reason: string;
   fromDate: string;
   toDate: string;

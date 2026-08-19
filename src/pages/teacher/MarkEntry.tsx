@@ -43,10 +43,8 @@ export default function MarksEntry() {
 
   const myTeacherRecord = teachers?.find((t) => t._id === teacherProfileId);
 
-  // এই Teacher এর সব Teaching Assignment (Class + Subject জোড়া)
   const myAssignments = myTeacherRecord?.teachingAssignments ?? [];
 
-  // dropdown এ দেখানোর জন্য একটা "key" বানাচ্ছি: "classGroupId|subject"
   const selected = myAssignments.find(
     (a) => `${a.classGroupId}|${a.subject}` === selectedAssignmentKey
   );
@@ -57,7 +55,6 @@ export default function MarksEntry() {
     skip: !selectedSubject,
   });
 
-  // সিলেক্ট করা ক্লাসের Student
   const classStudents =
     students?.filter((s) => s.classGroupId === selectedClassId) ?? [];
 

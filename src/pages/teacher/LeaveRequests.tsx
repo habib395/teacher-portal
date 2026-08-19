@@ -20,6 +20,7 @@ const statusColor: Record<string, string> = {
 
 export default function LeaveRequests() {
   const { data: leaves, isLoading } = useGetLeavesQuery();
+  console.log(leaves);
   const [updateStatus, { isLoading: isUpdating }] = useUpdateLeaveStatusMutation();
 
   const handleApprove = async (id: string) => {
@@ -49,6 +50,7 @@ export default function LeaveRequests() {
           <TableHeader>
             <TableRow>
               <TableHead>Student</TableHead>
+              <TableHead>Class</TableHead>
               <TableHead>Reason</TableHead>
               <TableHead>From</TableHead>
               <TableHead>To</TableHead>
@@ -61,6 +63,7 @@ export default function LeaveRequests() {
             {leaves?.map((leave) => (
               <TableRow key={leave._id}>
                 <TableCell>{leave.studentName}</TableCell>
+                <TableCell>{leave.classGroupId}</TableCell>
                 <TableCell>{leave.reason}</TableCell>
                 <TableCell>{leave.fromDate}</TableCell>
                 <TableCell>{leave.toDate}</TableCell>
@@ -102,7 +105,7 @@ export default function LeaveRequests() {
             ))}
             {leaves?.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="text-center text-gray-500">
+                <TableCell colSpan={8} className="text-center text-gray-500">
                   No leave requests yet.
                 </TableCell>
               </TableRow>
