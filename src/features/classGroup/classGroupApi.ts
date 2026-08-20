@@ -1,9 +1,10 @@
 import { apiSlice } from "@/features/api/apiSlice";
 import type { ClassGroup } from "@/types";
 
-interface ClassGroupPayload {
+export interface ClassGroupPayload {
   programName: string;
   yearName: string;
+  section?: string;
 }
 
 export const classGroupApi = apiSlice.injectEndpoints({

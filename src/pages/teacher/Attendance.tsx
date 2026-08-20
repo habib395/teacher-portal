@@ -41,7 +41,6 @@ export default function Attendance() {
   const [searchQuery, setSearchQuery] = useState("");
   const [manualOverrides, setManualOverrides] = useState<Record<string, AttendanceStatus>>({});
   
-  // নতুন স্টেট: স্ট্যাটাস অনুযায়ী ফিল্টার করার জন্য ("all" | "present" | "absent")
   const [filterStatus, setFilterStatus] = useState<"all" | "present" | "absent">("all");
 
   const { data: students, isLoading: studentsLoading } = useGetStudentsQuery();
@@ -53,7 +52,12 @@ export default function Attendance() {
   const myClassIds = useMemo(() => {
     const ids = new Set<string>();
     if (myTeacherRecord?.classTeacherOf) {
-      ids.add(myTeacherRecord.classTeacherOf);
+      if (Array.isArray(myTeacherRecord.classTeacherOf)) {
+        myTeacherRecord.classTeacherOf.forEach((id) => ids.add(id));
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ids.add(myTeacherRecord.classTeacherOf as any);
+      }
     }
     return ids;
   }, [myTeacherRecord]);
@@ -94,7 +98,6 @@ export default function Attendance() {
     });
   }, [classStudents, existingAttendance, manualOverrides]);
 
-  // ফিল্টারিং লজিক: সার্চ কুয়েরি এবং কার্ড ক্লিক ফিল্টার একত্রে কাজ করবে
   const filteredRecords = useMemo(() => {
     return records.filter((r) => {
       const matchesSearch =
@@ -193,13 +196,13 @@ export default function Attendance() {
         <div className="relative z-15 flex items-center gap-3 flex-wrap">
           {myClasses.length > 1 && (
             <Select value={activeClassId} onValueChange={setSelectedClassId}>
-              <SelectTrigger className="bg-white/10 border border-white/20 text-white text-sm font-semibold rounded-2xl h-10 px-4 w-52">
+              <SelectTrigger className="bg-white/10 border border-white/20 text-white text-sm font-semibold rounded-2xl h-10 px-4 w-60">
                 <SelectValue placeholder="Select Your Class" />
               </SelectTrigger>
               <SelectContent className="w-[--radix-select-trigger-width] min-w-[--radix-select-trigger-width] rounded-2xl">
                 {myClasses.map((cg) => (
                   <SelectItem key={cg._id} value={cg._id}>
-                    {cg.programName} — {cg.yearName}
+                    {cg.programName} — {cg.yearName} {cg.section ? `(${cg.section})` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -236,9 +239,8 @@ export default function Attendance() {
         </div>
       )}
 
-      {/* Modern Stats Cards (ক্লিক করলে ফিল্টার হবে) */}
+      {/* Modern Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Total Enrolled Card (ক্লিক করলে সব দেখাবে) */}
         <div 
           onClick={() => setFilterStatus("all")}
           className={`bg-white p-5 rounded-3xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
@@ -254,7 +256,6 @@ export default function Attendance() {
           </div>
         </div>
 
-        {/* Present Today Card (ক্লিক করলে শুধু প্রেজেন্ট দেখাবে) */}
         <div 
           onClick={() => setFilterStatus("present")}
           className={`bg-white p-5 rounded-3xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
@@ -273,7 +274,6 @@ export default function Attendance() {
           </div>
         </div>
 
-        {/* Absent Today Card (ক্লিক করলে শুধু এবসেন্ট দেখাবে) */}
         <div 
           onClick={() => setFilterStatus("absent")}
           className={`bg-white p-5 rounded-3xl border shadow-sm flex items-center justify-between cursor-pointer transition-all ${
@@ -289,7 +289,6 @@ export default function Attendance() {
           </div>
         </div>
 
-        {/* Bulk Action Panel */}
         <div className="bg-white p-4 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-center gap-2">
           <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 px-1">Quick Bulk Actions</p>
           <div className="grid grid-cols-2 gap-2">
@@ -327,7 +326,6 @@ export default function Attendance() {
         </div>
         
         <div className="flex items-center gap-3">
-          {/* যদি ফিল্টার একটিভ থাকে তবে রিসেট করার বাটন দেখাবে */}
           {filterStatus !== "all" && (
             <Button 
               variant="ghost" 

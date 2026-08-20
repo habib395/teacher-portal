@@ -16,10 +16,18 @@ import {
   useCreateClassGroupMutation,
   useDeleteClassGroupMutation,
 } from "@/features/classGroup/classGroupApi";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select"; 
 
 export default function ManageClasses() {
   const [programName, setProgramName] = useState("");
   const [yearName, setYearName] = useState("");
+  const [section, setSection] = useState<string>("none"); 
 
   const { data: classGroups, isLoading } = useGetClassGroupsQuery();
   const [createClassGroup, { isLoading: isCreating }] = useCreateClassGroupMutation();
@@ -31,9 +39,14 @@ export default function ManageClasses() {
       return;
     }
     try {
-      await createClassGroup({ programName, yearName }).unwrap();
+      await createClassGroup({
+        programName,
+        yearName,
+        section: section === "none" ? undefined : section,
+      }).unwrap();
       setProgramName("");
       setYearName("");
+      setSection("none");
       toast.success("Class group created successfully!");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
@@ -55,7 +68,7 @@ export default function ManageClasses() {
     <div>
       <h1 className="text-2xl font-bold">Manage Classes (Batches)</h1>
 
-      <div className="mt-6 grid gap-4 rounded-md border p-4 md:grid-cols-3">
+      <div className="mt-6 grid gap-4 rounded-md border p-4 md:grid-cols-4">
         <div>
           <Label htmlFor="programName">Program Name</Label>
           <Input
@@ -74,6 +87,19 @@ export default function ManageClasses() {
             placeholder="e.g. 2nd Year"
           />
         </div>
+        <div>
+          <Label htmlFor="section">Section (optional)</Label>
+          <Select value={section} onValueChange={setSection}>
+            <SelectTrigger id="section">
+              <SelectValue placeholder="No section" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No Section (Regular Class)</SelectItem>
+              <SelectItem value="College">College</SelectItem>
+              <SelectItem value="Institute">Institute</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex items-end">
           <Button onClick={handleCreate} disabled={isCreating} className="w-full">
             {isCreating ? "Adding..." : "Add Class"}
@@ -87,7 +113,7 @@ export default function ManageClasses() {
           <TableHeader>
             <TableRow>
               <TableHead>Program</TableHead>
-              <TableHead>Year</TableHead>
+              <TableHead>Year / Section</TableHead>
               <TableHead className="text-right">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -100,7 +126,9 @@ export default function ManageClasses() {
             {classGroups?.map((cg) => (
               <TableRow key={cg._id}>
                 <TableCell>{cg.programName}</TableCell>
-                <TableCell>{cg.yearName}</TableCell>
+                <TableCell>
+                  {cg.yearName} {cg.section && `(${cg.section})`}
+                </TableCell>
                 <TableCell className="text-right">
                   <Button
                     variant="destructive"

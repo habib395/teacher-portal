@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useSelector } from "react-redux";
 import {
   Table,
@@ -12,6 +13,13 @@ import { useGetTeachersQuery } from "@/features/teacher/teacherApi";
 import { useGetClassGroupsQuery } from "@/features/classGroup/classGroupApi";
 import type { RootState } from "@/app/store";
 import { marksApi } from "@/features/marks/markApi";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function MyClassResults() {
   const teacherProfileId = useSelector((state: RootState) => state.auth.teacherProfile);
@@ -21,16 +29,51 @@ export default function MyClassResults() {
   const { data: classGroups } = useGetClassGroupsQuery();
 
   const myTeacherRecord = teachers?.find((t) => t._id === teacherProfileId);
-  const myClassGroup = classGroups?.find((cg) => cg._id === myTeacherRecord?.classTeacherOf);
+
+  const classTeacherIds: string[] = Array.isArray(myTeacherRecord?.classTeacherOf)
+    ? myTeacherRecord.classTeacherOf
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    : myTeacherRecord?.classTeacherOf ? [myTeacherRecord.classTeacherOf as any] : [];
+
+
+  const [selectedClassId, setSelectedClassId] = useState<string>("");
+
+  const activeClassId = selectedClassId || classTeacherIds[0] || "";
+
+  const myClassGroup = classGroups?.find((cg) => cg._id === activeClassId);
   const myClassStudents =
-    students?.filter((s) => s.classGroupId === myTeacherRecord?.classTeacherOf) ?? [];
+    students?.filter((s) => s.classGroupId === activeClassId) ?? [];
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">
-        Class Result Summary
-        {myClassGroup && ` — ${myClassGroup.programName} (${myClassGroup.yearName})`}
-      </h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl font-bold">
+          Class Result Summary
+          {myClassGroup && 
+            ` — ${myClassGroup.programName} (${myClassGroup.yearName}${myClassGroup.section ? `, ${myClassGroup.section}` : ""})`}
+        </h1>
+
+        {classTeacherIds.length > 1 && (
+          <div className="w-64">
+            <Select value={activeClassId} onValueChange={setSelectedClassId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classTeacherIds.map((id) => {
+                  const cg = classGroups?.find((c) => c._id === id);
+                  if (!cg) return null;
+                  return (
+                    <SelectItem key={id} value={id}>
+                      {cg.programName} — {cg.yearName} {cg.section ? `(${cg.section})` : ""}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+      </div>
 
       <div className="mt-6 rounded-md border">
         <Table>

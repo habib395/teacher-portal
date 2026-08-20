@@ -20,12 +20,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  TableHead as _TableHead, // keeping imports clean
+} from "@/components/ui/table";
 import type { Teacher, TeachingAssignment } from "@/types";
 import {
   useGetTeachersQuery,
@@ -50,14 +46,15 @@ export default function ManageTeachers() {
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [phone, setPhone] = useState("");
-  const [classTeacherOf, setClassTeacherOf] = useState<string>("none");
+  const [classTeacherOf, setClassTeacherOf] = useState<string[]>([]);
   const [assignments, setAssignments] = useState<TeachingAssignment[]>([]);
 
-  const getClassGroupLabel = (id: string) => {
-    if (!classGroups) return "Loading...";
-    const cg = classGroups.find((c) => c._id === id);
-    return cg ? `${cg.programName} — ${cg.yearName}` : "Unknown";
-  };
+const getClassGroupLabel = (id: string) => {
+  if (!classGroups) return "Loading...";
+  const cg = classGroups.find((c) => c._id === id);
+  if (!cg) return "Unknown";
+  return `${cg.programName} — ${cg.yearName}${cg.section ? ` (${cg.section})` : ""}`;
+};
 
   const openAddDialog = () => {
     setEditingTeacher(null);
@@ -65,7 +62,7 @@ export default function ManageTeachers() {
     setEmail("");
     setSubject("");
     setPhone("");
-    setClassTeacherOf("none");
+    setClassTeacherOf([]);
     setAssignments([]);
     setIsDialogOpen(true);
   };
@@ -76,10 +73,25 @@ export default function ManageTeachers() {
     setEmail(teacher.email);
     setSubject(teacher.subject);
     setPhone(teacher.phone);
-    // Safe check: যদি classTeacherOf না থাকে তবে "none" সেট হবে
-    setClassTeacherOf(teacher.classTeacherOf ? teacher.classTeacherOf : "none");
+    
+    let assignedClasses: string[] = [];
+    if (Array.isArray(teacher.classTeacherOf)) {
+      assignedClasses = teacher.classTeacherOf;
+    } else if (teacher.classTeacherOf) {
+      assignedClasses = [teacher.classTeacherOf as unknown as string];
+    }
+    setClassTeacherOf(assignedClasses);
+
     setAssignments(teacher.teachingAssignments || []);
     setIsDialogOpen(true);
+  };
+
+  const toggleClassTeacherSelection = (classId: string) => {
+    setClassTeacherOf((prev) =>
+      prev.includes(classId)
+        ? prev.filter((id) => id !== classId)
+        : [...prev, classId]
+    );
   };
 
   const addAssignmentRow = () => {
@@ -118,7 +130,7 @@ export default function ManageTeachers() {
       email,
       subject,
       phone,
-      classTeacherOf: classTeacherOf === "none" ? undefined : classTeacherOf,
+      classTeacherOf: classTeacherOf.length > 0 ? classTeacherOf : undefined,
       teachingAssignments: validAssignments,
     };
   
@@ -173,52 +185,64 @@ export default function ManageTeachers() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {teachers?.map((teacher) => (
-              <TableRow key={teacher._id} className="hover:bg-muted/30 transition-colors">
-                <TableCell className="font-medium text-foreground">{teacher.name}</TableCell>
-                <TableCell className="text-muted-foreground">{teacher.email}</TableCell>
-                <TableCell>
-                  {teacher.classTeacherOf ? (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                      {getClassGroupLabel(teacher.classTeacherOf)}
-                    </span>
-                  ) : (
-                    <span className="text-muted-foreground/60">—</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {teacher.teachingAssignments?.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {teacher.teachingAssignments.map((a, i) => (
-                        <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-secondary text-secondary-foreground border border-border">
-                          {a.subject} ({getClassGroupLabel(a.classGroupId)})
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground/60">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-right space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 gap-1"
-                    onClick={() => openEditDialog(teacher)}
-                  >
-                    <Edit className="h-3.5 w-3.5" /> Edit
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="h-8 gap-1 bg-destructive/10 text-destructive hover:bg-destructive/20 border-transparent shadow-none"
-                    onClick={() => handleDelete(teacher._id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" /> Delete
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {teachers?.map((teacher) => {
+              const teacherClasses = Array.isArray(teacher.classTeacherOf)
+                ? teacher.classTeacherOf
+                : teacher.classTeacherOf
+                ? [teacher.classTeacherOf]
+                : [];
+
+              return (
+                <TableRow key={teacher._id} className="hover:bg-muted/30 transition-colors">
+                  <TableCell className="font-medium text-foreground">{teacher.name}</TableCell>
+                  <TableCell className="text-muted-foreground">{teacher.email}</TableCell>
+                  <TableCell>
+                    {teacherClasses.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {teacherClasses.map((classId, idx) => (
+                          <span key={idx} className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                            {getClassGroupLabel(classId as string)}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/60">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {teacher.teachingAssignments?.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {teacher.teachingAssignments.map((a, i) => (
+                          <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-xs bg-secondary text-secondary-foreground border border-border">
+                            {a.subject} ({getClassGroupLabel(a.classGroupId)})
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/60">—</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-8 gap-1"
+                      onClick={() => openEditDialog(teacher)}
+                    >
+                      <Edit className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="h-8 gap-1 bg-destructive/10 text-destructive hover:bg-destructive/20 border-transparent shadow-none"
+                      onClick={() => handleDelete(teacher._id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {teachers?.length === 0 && (
               <TableRow>
                 <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
@@ -289,28 +313,40 @@ export default function ManageTeachers() {
               </div>
             </div>
 
-            {/* ২. Class Teacher Role */}
             <div className="rounded-xl border bg-card p-5 shadow-2xs space-y-3">
               <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 border-b pb-2">
                 <UserCheck className="h-4 w-4 text-primary" />
-                Administrative Role
+                Administrative Role (Class Teacher of)
               </h3>
-              <div className="space-y-1.5">
-                <Label>Assigned Class Teacher Role (Optional)</Label>
+              <div className="space-y-2">
+                <Label>Select classes where this teacher is the Class Teacher (Multiple choice)</Label>
                 {classGroups ? (
-                  <Select value={classTeacherOf} onValueChange={setClassTeacherOf}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select class group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Not a Class Teacher</SelectItem>
-                      {classGroups.map((cg) => (
-                        <SelectItem key={cg._id} value={cg._id}>
-                          {cg.programName} — {cg.yearName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    {classGroups.map((cg) => {
+                      const isSelected = classTeacherOf.includes(cg._id);
+                      return (
+                        <div
+                          key={cg._id}
+                          onClick={() => toggleClassTeacherSelection(cg._id)}
+                          className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                            isSelected
+                              ? "bg-primary/5 border-primary text-primary font-medium"
+                              : "bg-background border-border hover:bg-muted/50 text-foreground"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => {}} // parent div handles click
+                            className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <span className="text-sm">
+                            {cg.programName} — {cg.yearName}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">Loading available classes...</p>
                 )}
@@ -340,24 +376,20 @@ export default function ManageTeachers() {
                     </span>
 
                     {classGroups ? (
-                      <Select
-                        // যদি assignment.classGroupId খালি থাকে তবে undefined দিন যাতে Select ক্র্যাশ না করে
-                        value={assignment.classGroupId || undefined}
-                        onValueChange={(v) =>
-                          updateAssignmentRow(index, "classGroupId", v)
+                      <select
+                        value={assignment.classGroupId || ""}
+                        onChange={(e) =>
+                          updateAssignmentRow(index, "classGroupId", e.target.value)
                         }
+                        className="w-full sm:w-[240px] h-9 rounded-md border border-input bg-background px-3 text-sm shadow-2xs focus:outline-hidden focus:ring-1 focus:ring-ring"
                       >
-                        <SelectTrigger className="w-full sm:w-[240px] bg-background">
-                          <SelectValue placeholder="Select Class / Program" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {classGroups.map((cg) => (
-                            <SelectItem key={cg._id} value={cg._id}>
-                              {cg.programName} — {cg.yearName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        <option value="">Select Class / Program</option>
+                        {classGroups.map((cg) => (
+                          <option key={cg._id} value={cg._id}>
+                            {cg.programName} — {cg.yearName}
+                          </option>
+                        ))}
+                      </select>
                     ) : (
                       <div className="flex-1 text-xs text-muted-foreground">Loading classes...</div>
                     )}

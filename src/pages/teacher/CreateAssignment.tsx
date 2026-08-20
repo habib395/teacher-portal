@@ -42,14 +42,18 @@ export default function CreateAssignment() {
 
   const myTeacherRecord = teachers?.find((t) => t._id === teacherProfileId);
 
-  // Teacher যেই যেই ব্যাচে পড়ান (classTeacherOf + teachingAssignments থেকে) — এই ক্লাসগুলোই assignment দিতে পারবেন
   const myClassIds = new Set<string>();
-  if (myTeacherRecord?.classTeacherOf) myClassIds.add(myTeacherRecord.classTeacherOf);
-  myTeacherRecord?.teachingAssignments.forEach((a) => myClassIds.add(a.classGroupId));
-
+  if (myTeacherRecord?.classTeacherOf) {
+    if (Array.isArray(myTeacherRecord.classTeacherOf)) {
+      myTeacherRecord.classTeacherOf.forEach((id) => myClassIds.add(id));
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      myClassIds.add(myTeacherRecord.classTeacherOf as any);
+    }
+  }
+  myTeacherRecord?.teachingAssignments?.forEach((a) => myClassIds.add(a.classGroupId));
   const myClasses = classGroups?.filter((cg) => myClassIds.has(cg._id)) ?? [];
 
-  // এই Teacher এর নিজের বানানো assignment গুলোই দেখাবে
   const myAssignments =
     assignments?.filter((a) => a.createdByTeacherId === teacherProfileId) ?? [];
 

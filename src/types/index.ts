@@ -29,7 +29,7 @@ export interface Teacher {
   email: string;
   subject: string;
   phone: string;
-  classTeacherOf?: string;
+  classTeacherOf?: string[];
   teachingAssignments: TeachingAssignment[];
 }
 
@@ -140,10 +140,13 @@ export interface Leave {
   status: LeaveStatus;
 }
 
+export type ClassSection = "College" | "Institute";
+
 export interface ClassGroup {
   _id: string;
   programName: string;
   yearName: string;
+  section?: ClassSection;
 }
 
 export interface Notice {

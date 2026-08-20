@@ -12,7 +12,11 @@ export const teacherApi = apiSlice.injectEndpoints({
       providesTags: ["Teacher"],
     }),
     
-    // createTeacher endpoint এ:
+    getMe: builder.query<Teacher, void>({
+      query: () => "/teachers/me", 
+      providesTags: ["Teacher"],
+    }),
+
     createTeacher: builder.mutation<CreateTeacherResponse, Partial<Teacher>>({
       query: (newTeacher) => ({
         url: "/teachers",
@@ -41,6 +45,7 @@ export const teacherApi = apiSlice.injectEndpoints({
 
 export const {
   useGetTeachersQuery,
+  useGetMeQuery, 
   useCreateTeacherMutation,
   useUpdateTeacherMutation,
   useDeleteTeacherMutation,

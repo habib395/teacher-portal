@@ -37,6 +37,7 @@ const handleUpdateProfile = async () => {
         name,
         userId: currentUser.userId!,
         studentProfile: currentUser.studentProfile,
+        teacherProfile: currentUser.teacherProfile,
         token: currentUser.token!,
       })
     );

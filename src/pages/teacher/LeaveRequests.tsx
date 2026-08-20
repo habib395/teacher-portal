@@ -11,6 +11,7 @@ import {
   useGetLeavesQuery,
   useUpdateLeaveStatusMutation,
 } from "@/features/leave/leaveApi";
+import { useGetClassGroupsQuery } from "@/features/classGroup/classGroupApi";
 
 const statusColor: Record<string, string> = {
   pending: "text-amber-600",
@@ -20,8 +21,15 @@ const statusColor: Record<string, string> = {
 
 export default function LeaveRequests() {
   const { data: leaves, isLoading } = useGetLeavesQuery();
-  console.log(leaves);
+  const { data: classGroups } = useGetClassGroupsQuery();
   const [updateStatus, { isLoading: isUpdating }] = useUpdateLeaveStatusMutation();
+
+  const getClassGroupLabel = (classGroupId: string) => {
+    if (!classGroups) return classGroupId;
+    const cg = classGroups.find((c) => c._id === classGroupId);
+    if (!cg) return "Unknown Class";
+    return `${cg.programName} — ${cg.yearName}${cg.section ? ` (${cg.section})` : ""}`;
+  };
 
   const handleApprove = async (id: string) => {
     try {
@@ -63,7 +71,7 @@ export default function LeaveRequests() {
             {leaves?.map((leave) => (
               <TableRow key={leave._id}>
                 <TableCell>{leave.studentName}</TableCell>
-                <TableCell>{leave.classGroupId}</TableCell>
+                <TableCell>{getClassGroupLabel(leave.classGroupId)}</TableCell>
                 <TableCell>{leave.reason}</TableCell>
                 <TableCell>{leave.fromDate}</TableCell>
                 <TableCell>{leave.toDate}</TableCell>

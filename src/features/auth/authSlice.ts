@@ -51,6 +51,7 @@ const authSlice = createSlice({
       state.name = null;
       state.userId = null;
       state.studentProfile = null;
+      state.teacherProfile = null; 
       state.token = null;
     },
   },
