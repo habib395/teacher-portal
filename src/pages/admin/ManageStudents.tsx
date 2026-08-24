@@ -40,21 +40,23 @@ export default function ManageStudents() {
   const [createStudent, { isLoading: isCreating }] = useCreateStudentMutation();
   const [updateStudent, { isLoading: isUpdating }] = useUpdateStudentMutation();
   const [deleteStudent] = useDeleteStudentMutation();
-
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
-
+  
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [className, setClassName] = useState("");
   const [rollNumber, setRollNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const { data: classGroups } = useGetClassGroupsQuery();
-const [classGroupId, setClassGroupId] = useState<string>("none");
-
+  const [classGroupId, setClassGroupId] = useState<string>("none");
+  
 const openAddDialog = () => {
   setEditingStudent(null);
   setName("");
   setEmail("");
+  setPhoneNumber("");
   setClassName("");
   setRollNumber("");
   setClassGroupId("none");
@@ -65,6 +67,7 @@ const openEditDialog = (student: Student) => {
   setEditingStudent(student);
   setName(student.name);
   setEmail(student.email);
+  setPhoneNumber(student.phoneNumber || "");
   setClassName(student.className);
   setRollNumber(student.rollNumber);
   setClassGroupId(student.classGroupId || "none");
@@ -85,6 +88,7 @@ const openEditDialog = (student: Student) => {
     const payload = {
       name,
       email,
+      phoneNumber,
       className,
       rollNumber,
       classGroupId: classGroupId === "none" ? undefined : classGroupId,
@@ -263,7 +267,7 @@ const openEditDialog = (student: Student) => {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="className" className="text-xs font-bold uppercase tracking-wider text-slate-500">Class / Program Name</Label>
+              <Label htmlFor="className" className="text-xs font-bold uppercase tracking-wider text-slate-500">Program Name</Label>
               <Input
                 id="className"
                 placeholder="e.g., B.Sc in Computer Science"
@@ -282,25 +286,45 @@ const openEditDialog = (student: Student) => {
                 className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700 outline-none font-mono"
               />
               <div>
-              <Label htmlFor="classGroup">Class (Batch)</Label>
+              <div className="space-y-2">
+              <Label htmlFor="phoneNumber" className="text-xs font-bold uppercase tracking-wider text-slate-500">Phone Number</Label>
+              <Input 
+                id="phoneNumber" 
+                placeholder="e.g., 01700000000" 
+                value={phoneNumber} 
+                onChange={(e) => setPhoneNumber(e.target.value)} 
+                className="bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700 outline-none font-mono"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="classGroup" className="text-xs font-bold uppercase tracking-wider text-slate-500">Class (Batch)</Label>
   {classGroups ? (
     <Select value={classGroupId} onValueChange={setClassGroupId}>
-      <SelectTrigger id="classGroup" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700">
-        <SelectValue placeholder="Select class" />
-      </SelectTrigger>
-      {/* এখানে w-[--radix-select-trigger-width] এবং min-w-[--radix-select-trigger-width] ক্লাসগুলো যোগ করা হয়েছে */}
-      <SelectContent className="w-[--radix-select-trigger-width] min-w-[--radix-select-trigger-width] rounded-2xl">
-        <SelectItem value="none">Not Assigned</SelectItem>
-        {classGroups.map((cg) => (
-          <SelectItem key={cg._id} value={cg._id}>
-            {cg.programName} — {cg.yearName}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <SelectTrigger id="classGroup" className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 h-12 text-sm font-semibold text-slate-700">
+      <SelectValue placeholder="Select class">
+        {/* এখানে সিলেক্ট করার পর ট্রিগারে কী দেখাবে তা হ্যান্ডেল করা হচ্ছে */}
+        {classGroupId === "none" || !classGroupId 
+          ? "Not Assigned" 
+          : (() => {
+              const selectedClass = classGroups?.find(cg => cg._id === classGroupId);
+              return selectedClass ? `${selectedClass.programName} — ${selectedClass.yearName} ${selectedClass.section ? `(${selectedClass.section})` : ""}` : "Select class";
+            })()
+        }
+      </SelectValue>
+    </SelectTrigger>
+    <SelectContent className="w-[--radix-select-trigger-width] min-w-[--radix-select-trigger-width] rounded-2xl">
+      <SelectItem value="none">Not Assigned</SelectItem>
+      {classGroups.map((cg) => (
+        <SelectItem key={cg._id} value={cg._id}>
+          {cg.programName} — {cg.yearName} {cg.section ? `(${cg.section})` : ""}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
   ) : (
     <p className="text-sm text-gray-400">Loading classes...</p>
   )}
+  </div>
 </div>
             </div>
           </div>

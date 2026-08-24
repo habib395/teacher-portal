@@ -38,6 +38,7 @@ export interface Student {
   _id: string;
   name: string;
   email: string;
+  phoneNumber: string;
   className: string;
   rollNumber: string;
   classGroupId?: string;
